@@ -1,12 +1,15 @@
 // /frontend/src/App.jsx
-import { useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
+import Dashboard from "./components/Dashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
 import "./styles/root.css";
 import "./styles/main.css";
 
-export default function App() {
-  const [showLogin, setShowLogin] = useState(true);
+function AuthApp() {
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="auth-wrapper">
@@ -17,13 +20,44 @@ export default function App() {
         <div className="piece piece-4">♝</div>
       </div>
       
-      <div className={`page-transition ${showLogin ? 'login-active' : 'signup-active'}`}>
-        {showLogin ? (
-          <Login switchToSignup={() => setShowLogin(false)} />
-        ) : (
-          <Signup switchToLogin={() => setShowLogin(true)} />
-        )}
-      </div>
+      <Routes>
+        <Route 
+          path="/login" 
+          element={
+            isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
+          } 
+        />
+        <Route 
+          path="/signup" 
+          element={
+            isAuthenticated ? <Navigate to="/dashboard" replace /> : <Signup />
+          } 
+        />
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/" 
+          element={
+            <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />
+          } 
+        />
+      </Routes>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AuthApp />
+      </Router>
+    </AuthProvider>
   );
 }

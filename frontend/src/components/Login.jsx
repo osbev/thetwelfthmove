@@ -1,9 +1,11 @@
 // /frontend/src/components/Login.jsx
 import { useState } from "react";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/login.css";
 
-export default function Login({ switchToSignup }) {
+export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -11,6 +13,10 @@ export default function Login({ switchToSignup }) {
   const [msg, setMsg] = useState("");
   const [msgType, setMsgType] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const validate = () => {
     const newErrors = {};
@@ -36,8 +42,18 @@ export default function Login({ switchToSignup }) {
         username,
         password,
       });
+      
+      // Store user data and token in context
+      login({ username }, res.data.token);
+      
       setMsgType("success");
-      setMsg("SUCCESS: " + JSON.stringify(res.data));
+      setMsg("SUCCESS: Login successful! Redirecting...");
+      
+      // Redirect to dashboard after successful login
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1500);
+      
     } catch (err) {
       setMsgType("error");
       setMsg(err.response?.data?.error || "Unknown error");
@@ -50,6 +66,10 @@ export default function Login({ switchToSignup }) {
     if (e.key === 'Enter' && !isLoading) {
       handleLogin();
     }
+  };
+
+  const switchToSignup = () => {
+    navigate('/signup');
   };
 
   return (

@@ -1,1 +1,6 @@
+com\thetwelfthmove\models\Player.class
+com\thetwelfthmove\dao\DatabaseConnection.class
+com\thetwelfthmove\utils\JWTUtil.class
 com\thetwelfthmove\App.class
+com\thetwelfthmove\dao\PlayerDAO.class
+com\thetwelfthmove\controllers\AuthController.class
