@@ -1,16 +1,1 @@
-com\thetwelfthmove\controller\StatsController.class
 com\thetwelfthmove\App.class
-com\thetwelfthmove\dao\PlayerDAO.class
-com\thetwelfthmove\model\Board.class
-com\thetwelfthmove\util\JsonUtil.class
-com\thetwelfthmove\dao\DatabaseConnection.class
-com\thetwelfthmove\util\AlertUtil.class
-com\thetwelfthmove\model\Game.class
-com\thetwelfthmove\model\Piece.class
-com\thetwelfthmove\controller\GameController.class
-com\thetwelfthmove\dao\MoveDAO.class
-com\thetwelfthmove\model\Move.class
-com\thetwelfthmove\controller\PlayerController.class
-com\thetwelfthmove\model\Player.class
-com\thetwelfthmove\controller\MovesController.class
-com\thetwelfthmove\dao\GameDAO.class

@@ -1,0 +1,123 @@
+/* /frontend/src/styles/root.css */
+
+:root {
+  --primary: #e0e0e0;
+  --primary-dark: #ffffff;
+  --accent: #6dd5ed;
+  --accent-dark: #2193b0;
+  --success: #5cf05c;
+  --danger: #ff6b6b;
+  --bg: #0a0a0f;
+  --bg-secondary: #1a1a1f;
+  --card-bg: rgba(20, 20, 25, 0.85);
+  --border: rgba(224, 224, 224, 0.15);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --radius: 12px;
+  --transition: 0.3s ease;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+body {
+  background: var(--bg);
+  overflow-x: hidden;
+}
+
+.auth-wrapper {
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0a0a0f 0%, #1a1a1f 50%, #0f0f14 100%);
+}
+
+.auth-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(109, 213, 237, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(224, 224, 224, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.chess-pieces-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.piece {
+  position: absolute;
+  font-size: 120px;
+  color: rgba(224, 224, 224, 0.04);
+  animation: float 20s infinite ease-in-out;
+  user-select: none;
+}
+
+.piece-1 {
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.piece-2 {
+  top: 60%;
+  right: 10%;
+  animation-delay: -5s;
+}
+
+.piece-3 {
+  bottom: 15%;
+  left: 15%;
+  animation-delay: -10s;
+}
+
+.piece-4 {
+  top: 30%;
+  right: 20%;
+  animation-delay: -15s;
+}
+
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0) rotate(0deg); 
+  }
+  25% { 
+    transform: translateY(-30px) rotate(5deg); 
+  }
+  50% { 
+    transform: translateY(0) rotate(0deg); 
+  }
+  75% { 
+    transform: translateY(30px) rotate(-5deg); 
+  }
+}
+
+.page-transition {
+  animation: fadeIn 0.6s ease-out;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}

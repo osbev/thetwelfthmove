@@ -1,0 +1,13 @@
+/* /frontend/src/styles/login.css */
+
+.login-card h1 {
+  color: var(--primary);
+}
+
+.login-card .crown-icon {
+  background: linear-gradient(135deg, #e0e0e0 0%, #ffffff 100%);
+}
+
+.login-card .card-glow {
+  background: radial-gradient(circle, rgba(224, 224, 224, 0.06) 0%, transparent 70%);
+}

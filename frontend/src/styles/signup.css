@@ -1,0 +1,13 @@
+/* /frontend/src/styles/signup.css */
+
+.signup-card h1 {
+  color: var(--accent);
+}
+
+.signup-card .crown-icon {
+  background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+}
+
+.signup-card .card-glow {
+  background: radial-gradient(circle, rgba(109, 213, 237, 0.1) 0%, transparent 70%);
+}
