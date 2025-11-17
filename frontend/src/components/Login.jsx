@@ -1,11 +1,13 @@
 // /frontend/src/components/Login.jsx
 import { useState } from "react";
-import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/login.css";
 
-export default function Login() {
+export default function Login({ switchToSignup }) {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -13,10 +15,6 @@ export default function Login() {
   const [msg, setMsg] = useState("");
   const [msgType, setMsgType] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
 
   const validate = () => {
     const newErrors = {};
@@ -37,27 +35,19 @@ export default function Login() {
     setIsLoading(true);
     setMsg("");
     
-    try {
-      const res = await axios.post("http://localhost:7000/login", {
-        username,
-        password,
-      });
-      
-      // Store user data and token in context
-      login({ username }, res.data.token);
-      
+    const result = await login(username, password);
+    
+    if (result.success) {
       setMsgType("success");
-      setMsg("SUCCESS: Login successful! Redirecting...");
+      setMsg("Welcome back! Redirecting...");
       
-      // Redirect to dashboard after successful login
+      // Redirect to dashboard after short delay
       setTimeout(() => {
         navigate("/dashboard");
-      }, 1500);
-      
-    } catch (err) {
+      }, 1000);
+    } else {
       setMsgType("error");
-      setMsg(err.response?.data?.error || "Unknown error");
-    } finally {
+      setMsg(result.error);
       setIsLoading(false);
     }
   };
@@ -66,10 +56,6 @@ export default function Login() {
     if (e.key === 'Enter' && !isLoading) {
       handleLogin();
     }
-  };
-
-  const switchToSignup = () => {
-    navigate('/signup');
   };
 
   return (

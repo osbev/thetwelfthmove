@@ -1,11 +1,13 @@
 // /frontend/src/components/Signup.jsx
 import { useState } from "react";
-import axios from "axios";
-import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import "../styles/signup.css";
 
-export default function Signup() {
+export default function Signup({ switchToLogin }) {
+  const navigate = useNavigate();
+  const { signup } = useAuth();
+  
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -15,9 +17,6 @@ export default function Signup() {
   const [msg, setMsg] = useState("");
   const [msgType, setMsgType] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
-  const { login } = useAuth();
-  const navigate = useNavigate();
 
   const getPasswordStrength = () => {
     if (!password) return { strength: 0, label: "" };
@@ -57,27 +56,19 @@ export default function Signup() {
     setIsLoading(true);
     setMsg("");
     
-    try {
-      const res = await axios.post("http://localhost:7000/signup", {
-        username,
-        password,
-      });
-      
-      // Auto-login after successful signup
-      login({ username }, res.data.token);
-      
+    const result = await signup(username, password);
+    
+    if (result.success) {
       setMsgType("success");
-      setMsg("SUCCESS: Account created! Redirecting...");
+      setMsg("Account created! Redirecting...");
       
-      // Redirect to dashboard after successful signup
+      // Redirect to dashboard after short delay
       setTimeout(() => {
         navigate("/dashboard");
-      }, 1500);
-      
-    } catch (err) {
+      }, 1000);
+    } else {
       setMsgType("error");
-      setMsg(err.response?.data?.error || "Unknown error");
-    } finally {
+      setMsg(result.error);
       setIsLoading(false);
     }
   };
@@ -89,10 +80,6 @@ export default function Signup() {
   };
 
   const passwordStrength = getPasswordStrength();
-
-  const switchToLogin = () => {
-    navigate('/login');
-  };
 
   return (
     <div className="auth-card signup-card">
