@@ -1,6 +1,12 @@
 C:\Users\Erica\Downloads\thetwelfthmove\backend\src\main\java\com\thetwelfthmove\controllers\AuthController.java
+C:\Users\Erica\Downloads\thetwelfthmove\backend\src\main\java\com\thetwelfthmove\models\ChessPiece.java
 C:\Users\Erica\Downloads\thetwelfthmove\backend\src\main\java\com\thetwelfthmove\dao\PlayerDAO.java
+C:\Users\Erica\Downloads\thetwelfthmove\backend\src\main\java\com\thetwelfthmove\models\ChessBoard.java
+C:\Users\Erica\Downloads\thetwelfthmove\backend\src\main\java\com\thetwelfthmove\models\Move.java
 C:\Users\Erica\Downloads\thetwelfthmove\backend\src\main\java\com\thetwelfthmove\models\Player.java
 C:\Users\Erica\Downloads\thetwelfthmove\backend\src\main\java\com\thetwelfthmove\utils\JWTUtil.java
 C:\Users\Erica\Downloads\thetwelfthmove\backend\src\main\java\com\thetwelfthmove\App.java
+C:\Users\Erica\Downloads\thetwelfthmove\backend\src\main\java\com\thetwelfthmove\models\Game.java
 C:\Users\Erica\Downloads\thetwelfthmove\backend\src\main\java\com\thetwelfthmove\dao\DatabaseConnection.java
+C:\Users\Erica\Downloads\thetwelfthmove\backend\src\main\java\com\thetwelfthmove\dao\GameDAO.java
+C:\Users\Erica\Downloads\thetwelfthmove\backend\src\main\java\com\thetwelfthmove\controllers\GameController.java
