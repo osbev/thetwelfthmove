@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import Dashboard from "./components/Dashboard";
+import GamePage from "./components/GamePage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthPage from "./components/AuthPage";
 import "./styles/root.css";
@@ -27,6 +28,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/game/:gameId" 
+            element={
+              <ProtectedRoute>
+                <GamePage />
               </ProtectedRoute>
             } 
           />

@@ -1,15 +1,39 @@
 // /frontend/src/components/Dashboard.jsx
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import "../styles/dashboard.css";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const { token } = useAuth();
+
   const handleLogout = async () => {
     await logout();
     navigate("/login");
+  };
+
+  const handleCreateGame = async () => {
+    try {
+      const response = await axios.post(
+        'http://localhost:7000/games/create',
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.game) {
+        navigate(`/game/${response.data.game.gameId}`);
+      }
+    } catch (error) {
+      console.error('Failed to create game:', error);
+      alert('Failed to create game. Please try again.');
+    }
   };
 
   const winRate = user?.gamesPlayed > 0 
@@ -83,8 +107,8 @@ export default function Dashboard() {
           <div className="action-card">
             <div className="action-icon">🎮</div>
             <h3>Create Game</h3>
-            <p>Set up a custom game room</p>
-            <button className="action-btn secondary">Create Room</button>
+            <p>Start a new local 2-player chess game</p>
+            <button className="action-btn primary" onClick={handleCreateGame}>Create Game</button>
           </div>
 
           <div className="action-card">

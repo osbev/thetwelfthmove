@@ -16,11 +16,17 @@ thetwelfthmove/
 │   │   │           └── thetwelfthmove/
 │   │   │               ├── App.java
 │   │   │               ├── controllers/
-│   │   │               │   └── AuthController.java
+│   │   │               │   ├── AuthController.java
+│   │   │               │   └── GameController.java
 │   │   │               ├── dao/
 │   │   │               │   ├── DatabaseConnection.java
+│   │   │               │   ├── GameDAO.java
 │   │   │               │   └── PlayerDAO.java
 │   │   │               ├── models/
+│   │   │               │   ├── ChessBoard.java
+│   │   │               │   ├── ChessPiece.java
+│   │   │               │   ├── Game.java
+│   │   │               │   ├── Move.java
 │   │   │               │   └── Player.java
 │   │   │               └── utils/
 │   │   │                   └── JWTUtil.java
@@ -31,11 +37,18 @@ thetwelfthmove/
 │       │       └── thetwelfthmove/
 │       │           ├── App.class
 │       │           ├── controllers/
-│       │           │   └── AuthController.class
+│       │           │   ├── AuthController.class
+│       │           │   └── GameController.class
 │       │           ├── dao/
 │       │           │   ├── DatabaseConnection.class
+│       │           │   ├── GameDAO.class
 │       │           │   └── PlayerDAO.class
 │       │           ├── models/
+│       │           │   ├── ChessBoard.class
+│       │           │   ├── ChessBoard.class
+│       │           │   ├── ChessPiece.class
+│       │           │   ├── Game.class
+│       │           │   ├── Move.class
 │       │           │   └── Player.class
 │       │           └── utils/
 │       │               └── JWTUtil.class
@@ -70,14 +83,20 @@ thetwelfthmove/
         ├── assets/
         │   └── react.svg
         ├── components/
+        │   ├── AuthPage.jsx
+        │   ├── ChessBoard.jsx
+        │   ├── ChessPieces.jsx
         │   ├── Dashboard.jsx
+        │   ├── GamePage.jsx
         │   ├── Login.jsx
         │   ├── ProtectedRoute.jsx
         │   └── Signup.jsx
         ├── context/
         │   └── AuthContext.jsx
         └── styles/
+            ├── chessboard.css
             ├── dashboard.css
+            ├── gamepage.css
             ├── login.css
             ├── main.css
             ├── root.css
@@ -94,8 +113,14 @@ thetwelfthmove/
   - **src/main/java/com/thetwelfthmove/**: Main source code.
     - **App.java**: Main application class.
     - **controllers/AuthController.java**: Authentication controller.
+    - **controllers/GameController.java**: Game controller for chess game logic.
     - **dao/DatabaseConnection.java**: Database connection utility.
+    - **dao/GameDAO.java**: Data access object for Game model.
     - **dao/PlayerDAO.java**: Data access object for Player model.
+    - **models/ChessBoard.java**: Chess board model class.
+    - **models/ChessPiece.java**: Chess piece model class.
+    - **models/Game.java**: Game model class.
+    - **models/Move.java**: Move model class.
     - **models/Player.java**: Player model class.
     - **utils/JWTUtil.java**: Utility for JWT operations.
   - **src/test/**: Test source code (currently empty).
@@ -119,13 +144,19 @@ thetwelfthmove/
     - **main.jsx**: Entry point.
     - **assets/react.svg**: React logo asset.
     - **components/**: React components.
+      - **AuthPage.jsx**: Authentication page component.
+      - **ChessBoard.jsx**: Chess board component.
+      - **ChessPieces.jsx**: Chess pieces component.
       - **Dashboard.jsx**: Dashboard component.
+      - **GamePage.jsx**: Game page component.
       - **Login.jsx**: Login component.
       - **ProtectedRoute.jsx**: Protected route component.
       - **Signup.jsx**: Signup component.
     - **context/AuthContext.jsx**: Authentication context.
     - **styles/**: Stylesheets.
+      - **chessboard.css**: Chess board styles.
       - **dashboard.css**: Dashboard styles.
+      - **gamepage.css**: Game page styles.
       - **login.css**: Login styles.
       - **main.css**: Main styles.
       - **root.css**: Root styles.
