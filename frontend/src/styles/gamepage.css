@@ -24,7 +24,7 @@
 
 .game-content {
   width: 100%;
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
   display: flex;
   gap: 30px;
@@ -34,18 +34,28 @@
   z-index: 1;
 }
 
-.board-section {
-  flex: 0 0 auto;
-}
-
-.side-panel {
-  flex: 1;
-  max-width: 400px;
+/* LEFT SIDE PANEL — Status + Actions */
+.left-panel {
+  width: 260px;
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
+/* BOARD IN THE CENTER */
+.board-section {
+  flex: 0 0 auto;
+}
+
+/* RIGHT SIDE PANEL — Captured + Moves */
+.right-panel {
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Shared Card Styles */
 .status-card,
 .captured-card,
 .moves-card,
@@ -129,12 +139,8 @@
 }
 
 @keyframes fadeIn {
-  from { 
-    opacity: 0;
-  }
-  to { 
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* Captured Pieces */
@@ -164,7 +170,6 @@
   border-radius: 6px;
   font-size: 13px;
   color: var(--text-secondary);
-  text-transform: capitalize;
 }
 
 .empty-captured {
@@ -175,7 +180,7 @@
 
 /* Move History */
 .moves-list {
-  max-height: 300px;
+  max-height: 350px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -196,10 +201,6 @@
   border-radius: 4px;
 }
 
-.moves-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(109, 213, 237, 0.5);
-}
-
 .move-item {
   display: flex;
   align-items: center;
@@ -210,57 +211,6 @@
   border-radius: 8px;
   font-family: 'Courier New', monospace;
   transition: all 0.2s ease;
-}
-
-.move-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--accent);
-}
-
-.move-number {
-  font-weight: 700;
-  color: var(--text-muted);
-  min-width: 30px;
-}
-
-.move-color {
-  font-size: 16px;
-}
-
-.move-notation {
-  flex: 1;
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-
-.capture-indicator {
-  color: var(--danger);
-  font-weight: 700;
-}
-
-.check-indicator {
-  color: #ffe66d;
-  font-weight: 700;
-}
-
-.checkmate-indicator {
-  color: var(--danger);
-  font-weight: 700;
-  font-size: 16px;
-}
-
-.empty-moves {
-  text-align: center;
-  color: var(--text-muted);
-  font-style: italic;
-  padding: 20px;
-}
-
-/* Actions */
-.actions-card {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
 
 .action-btn {
@@ -278,52 +228,6 @@
   gap: 8px;
 }
 
-.flip-btn {
-  background: rgba(109, 213, 237, 0.1);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.flip-btn:hover {
-  background: rgba(109, 213, 237, 0.2);
-  transform: translateY(-2px);
-}
-
-.resign-btn {
-  background: rgba(255, 107, 107, 0.1);
-  border-color: var(--danger);
-  color: var(--danger);
-}
-
-.resign-btn:hover {
-  background: rgba(255, 107, 107, 0.2);
-  transform: translateY(-2px);
-}
-
-.back-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--border);
-  color: var(--text-secondary);
-}
-
-.back-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--accent);
-  color: var(--text-primary);
-  transform: translateY(-2px);
-}
-
-.error-container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  background: linear-gradient(135deg, #0a0a0f 0%, #1a1a1f 50%, #0f0f14 100%);
-  color: var(--text-primary);
-}
-
 /* Responsive */
 @media (max-width: 1200px) {
   .game-content {
@@ -331,21 +235,14 @@
     align-items: center;
   }
 
-  .side-panel {
-    max-width: 100%;
+  .left-panel,
+  .right-panel {
     width: 100%;
+    max-width: 100%;
   }
 }
 
 @media (max-width: 768px) {
-  .game-content {
-    padding: 10px;
-  }
-
-  .side-panel {
-    gap: 15px;
-  }
-
   .status-card,
   .captured-card,
   .moves-card,

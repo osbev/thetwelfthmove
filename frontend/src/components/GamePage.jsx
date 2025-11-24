@@ -53,8 +53,7 @@ export default function GamePage() {
     try {
       const response = await axios.get(`http://localhost:7000/games/${gameId}/moves`);
       setMoves(response.data.moves);
-      
-      // Calculate captured pieces
+
       const captured = { white: [], black: [] };
       response.data.moves.forEach(move => {
         if (move.capturedPiece) {
@@ -67,7 +66,6 @@ export default function GamePage() {
       });
       setCapturedPieces(captured);
 
-      // Set last move
       if (response.data.moves.length > 0) {
         const last = response.data.moves[response.data.moves.length - 1];
         setLastMove({ from: last.fromSquare, to: last.toSquare });
@@ -89,22 +87,18 @@ export default function GamePage() {
         }
       );
 
-      // Update game state
       setBoard(response.data.board);
       setIsCheck(response.data.isCheck);
       setIsCheckmate(response.data.isCheckmate);
       setLastMove({ from, to });
 
-      // Update game object with new turn
       setGame(prev => ({
         ...prev,
         currentTurn: response.data.nextTurn,
       }));
 
-      // Reload moves
       loadMoves();
 
-      // Show checkmate alert
       if (response.data.isCheckmate) {
         setTimeout(() => {
           alert(`Checkmate! ${game.currentTurn === 'white' ? 'White' : 'Black'} wins!`);
@@ -171,21 +165,9 @@ export default function GamePage() {
   return (
     <div className="game-page">
       <div className="game-content">
-        {/* Chess Board */}
-        <div className="board-section">
-          <ChessBoard
-            board={board}
-            currentTurn={game.currentTurn}
-            onMove={handleMove}
-            lastMove={lastMove}
-            isCheck={isCheck}
-            flipped={flipped}
-          />
-        </div>
 
-        {/* Side Panel */}
-        <div className="side-panel">
-          {/* Game Status */}
+        {/* LEFT PANEL — Status + Actions */}
+        <div className="left-panel">
           <div className="status-card">
             <h2>Game Status</h2>
             <div className="turn-indicator">
@@ -201,7 +183,34 @@ export default function GamePage() {
             )}
           </div>
 
-          {/* Captured Pieces */}
+          <div className="actions-card">
+            <button className="action-btn flip-btn" onClick={handleFlipBoard}>
+              🔄 Flip Board
+            </button>
+            <button className="action-btn resign-btn" onClick={handleResign}>
+              🏳️ Resign
+            </button>
+            <button className="action-btn back-btn" onClick={() => navigate("/dashboard")}>
+              ← Back to Dashboard
+            </button>
+          </div>
+        </div>
+
+        {/* CENTER — Chessboard */}
+        <div className="board-section">
+          <ChessBoard
+            board={board}
+            currentTurn={game.currentTurn}
+            onMove={handleMove}
+            lastMove={lastMove}
+            isCheck={isCheck}
+            flipped={flipped}
+          />
+        </div>
+
+        {/* RIGHT PANEL — Captured + Moves */}
+        <div className="right-panel">
+
           <div className="captured-card">
             <h3>Captured Pieces</h3>
             <div className="captured-section">
@@ -216,6 +225,7 @@ export default function GamePage() {
                 )}
               </div>
             </div>
+
             <div className="captured-section">
               <div className="captured-label">Black Captured:</div>
               <div className="captured-pieces">
@@ -230,12 +240,11 @@ export default function GamePage() {
             </div>
           </div>
 
-          {/* Move History */}
           <div className="moves-card">
             <h3>Move History</h3>
             <div className="moves-list">
               {moves.length > 0 ? (
-                moves.map((move, idx) => (
+                moves.map((move) => (
                   <div key={move.moveId} className="move-item">
                     <span className="move-number">{move.moveNumber}.</span>
                     <span className={`move-color ${move.pieceColor}`}>
@@ -255,18 +264,6 @@ export default function GamePage() {
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="actions-card">
-            <button className="action-btn flip-btn" onClick={handleFlipBoard}>
-              🔄 Flip Board
-            </button>
-            <button className="action-btn resign-btn" onClick={handleResign}>
-              🏳️ Resign
-            </button>
-            <button className="action-btn back-btn" onClick={() => navigate("/dashboard")}>
-              ← Back to Dashboard
-            </button>
-          </div>
         </div>
       </div>
     </div>

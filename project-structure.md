@@ -2,34 +2,35 @@
 
 This document outlines the current directory structure of the `thetwelfthmove` project.
 
+
 ```
 thetwelfthmove/
-├── .gitignore
-├── project-structure.md
-├── schema.sql
-├── backend/
-│   ├── pom.xml
-│   ├── src/
-│   │   ├── main/
-│   │   │   └── java/
+├── .gitignore      #Git ignore file for the project.
+├── project-structure.md      #This file, documenting the project structure.
+├── schema.sql      #Database schema file.
+├── backend/      #Contains the Java backend application using Maven.
+│   ├── pom.xml       #Maven project configuration file.
+│   ├── src/      
+│   │   ├── main/       
+│   │   │   └── java/       
 │   │   │       └── com/
-│   │   │           └── thetwelfthmove/
-│   │   │               ├── App.java
+│   │   │           └── thetwelfthmove/     #Main source code.
+│   │   │               ├── App.java      #Main application class.
 │   │   │               ├── controllers/
-│   │   │               │   ├── AuthController.java
-│   │   │               │   └── GameController.java
+│   │   │               │   ├── AuthController.java     #Authentication controller.
+│   │   │               │   └── GameController.java     #Game controller for chess game logic.
 │   │   │               ├── dao/
-│   │   │               │   ├── DatabaseConnection.java
-│   │   │               │   ├── GameDAO.java
-│   │   │               │   └── PlayerDAO.java
+│   │   │               │   ├── DatabaseConnection.java     #Database connection utility.
+│   │   │               │   ├── GameDAO.java      #Data access object for Game model.
+│   │   │               │   └── PlayerDAO.java      #Data access object for Player model.
 │   │   │               ├── models/
-│   │   │               │   ├── ChessBoard.java
-│   │   │               │   ├── ChessPiece.java
-│   │   │               │   ├── Game.java
-│   │   │               │   ├── Move.java
-│   │   │               │   └── Player.java
+│   │   │               │   ├── ChessBoard.java     #Chess board model class.
+│   │   │               │   ├── ChessPiece.java     Chess piece model class.
+│   │   │               │   ├── Game.java     #Game model class.
+│   │   │               │   ├── Move.java     #Move model class.
+│   │   │               │   └── Player.java     #Player model class.
 │   │   │               └── utils/
-│   │   │                   └── JWTUtil.java
+│   │   │                   └── JWTUtil.java      #Utility for JWT operations.
 │   │   └── test/
 │   └── target/
 │       ├── classes/
@@ -67,24 +68,24 @@ thetwelfthmove/
 │       │           ├── createdFiles.lst
 │       │           └── inputFiles.lst
 │       └── test-classes/
-└── frontend/
-    ├── eslint.config.js
-    ├── index.html
+└── frontend/     #Contains the React frontend application using Vite.
+    ├── eslint.config.js      #ESLint configuration.
+    ├── index.html      #Main HTML file.
     ├── package-lock.json
     ├── package.json
     ├── README.md
     ├── vite.config.js
     ├── public/
     │   └── favicon.png
-    └── src/
-        ├── App.jsx
+    └── src/      #Source code.
+        ├── App.jsx     #Main App component.
         ├── index.css
-        ├── main.jsx
+        ├── main.jsx      #Entry point.
         ├── assets/
         │   └── react.svg
-        ├── components/
-        │   ├── AuthPage.jsx
-        │   ├── ChessBoard.jsx
+        ├── components/     #React components.
+        │   ├── AuthPage.jsx      # Authentication page component.
+        │   ├── ChessBoard.jsx      #Chess board component.
         │   ├── ChessPieces.jsx
         │   ├── Dashboard.jsx
         │   ├── GamePage.jsx
@@ -92,72 +93,13 @@ thetwelfthmove/
         │   ├── ProtectedRoute.jsx
         │   └── Signup.jsx
         ├── context/
-        │   └── AuthContext.jsx
-        └── styles/
+        │   └── AuthContext.jsx     #Authentication context.
+        └── styles/     #Stylesheets.
             ├── chessboard.css
             ├── dashboard.css
             ├── gamepage.css
             ├── login.css
-            ├── main.css
-            ├── root.css
+            ├── main.css      #Main styles.
+            ├── root.css      #Root styles.
             └── signup.css
 ```
-
-## Description
-
-- **.gitignore**: Git ignore file for the project.
-- **project-structure.md**: This file, documenting the project structure.
-- **schema.sql**: Database schema file.
-- **backend/**: Contains the Java backend application using Maven.
-  - **pom.xml**: Maven project configuration file.
-  - **src/main/java/com/thetwelfthmove/**: Main source code.
-    - **App.java**: Main application class.
-    - **controllers/AuthController.java**: Authentication controller.
-    - **controllers/GameController.java**: Game controller for chess game logic.
-    - **dao/DatabaseConnection.java**: Database connection utility.
-    - **dao/GameDAO.java**: Data access object for Game model.
-    - **dao/PlayerDAO.java**: Data access object for Player model.
-    - **models/ChessBoard.java**: Chess board model class.
-    - **models/ChessPiece.java**: Chess piece model class.
-    - **models/Game.java**: Game model class.
-    - **models/Move.java**: Move model class.
-    - **models/Player.java**: Player model class.
-    - **utils/JWTUtil.java**: Utility for JWT operations.
-  - **src/test/**: Test source code (currently empty).
-  - **target/**: Compiled classes and resources generated by Maven.
-    - **classes/**: Compiled main classes.
-    - **generated-sources/annotations/**: Generated source annotations.
-    - **generated-test-sources/test-annotations/**: Generated test source annotations.
-    - **maven-status/**: Maven build status files.
-    - **test-classes/**: Compiled test classes (currently empty).
-- **frontend/**: Contains the React frontend application using Vite.
-  - **eslint.config.js**: ESLint configuration.
-  - **index.html**: Main HTML file.
-  - **package-lock.json**: NPM lock file.
-  - **package.json**: NPM package configuration.
-  - **README.md**: Project README.
-  - **vite.config.js**: Vite configuration.
-  - **public/favicon.png**: Public asset (favicon).
-  - **src/**: Source code.
-    - **App.jsx**: Main App component.
-    - **index.css**: Global styles.
-    - **main.jsx**: Entry point.
-    - **assets/react.svg**: React logo asset.
-    - **components/**: React components.
-      - **AuthPage.jsx**: Authentication page component.
-      - **ChessBoard.jsx**: Chess board component.
-      - **ChessPieces.jsx**: Chess pieces component.
-      - **Dashboard.jsx**: Dashboard component.
-      - **GamePage.jsx**: Game page component.
-      - **Login.jsx**: Login component.
-      - **ProtectedRoute.jsx**: Protected route component.
-      - **Signup.jsx**: Signup component.
-    - **context/AuthContext.jsx**: Authentication context.
-    - **styles/**: Stylesheets.
-      - **chessboard.css**: Chess board styles.
-      - **dashboard.css**: Dashboard styles.
-      - **gamepage.css**: Game page styles.
-      - **login.css**: Login styles.
-      - **main.css**: Main styles.
-      - **root.css**: Root styles.
-      - **signup.css**: Signup styles.
