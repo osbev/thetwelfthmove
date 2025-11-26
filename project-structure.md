@@ -30,29 +30,18 @@ thetwelfthmove/
 │   │   │               │   ├── Move.java     #Move model class.
 │   │   │               │   └── Player.java     #Player model class.
 │   │   │               └── utils/
+│   │   │                   ├── GameCodeGenerator.java
 │   │   │                   └── JWTUtil.java      #Utility for JWT operations.
 │   │   └── test/
-│   └── target/
+│   └── target/         #incomplete cause auto-generated
 │       ├── classes/
 │       │   └── com/
 │       │       └── thetwelfthmove/
 │       │           ├── App.class
 │       │           ├── controllers/
-│       │           │   ├── AuthController.class
-│       │           │   └── GameController.class
 │       │           ├── dao/
-│       │           │   ├── DatabaseConnection.class
-│       │           │   ├── GameDAO.class
-│       │           │   └── PlayerDAO.class
 │       │           ├── models/
-│       │           │   ├── ChessBoard.class
-│       │           │   ├── ChessBoard.class
-│       │           │   ├── ChessPiece.class
-│       │           │   ├── Game.class
-│       │           │   ├── Move.class
-│       │           │   └── Player.class
 │       │           └── utils/
-│       │               └── JWTUtil.class
 │       ├── generated-sources/
 │       │   └── annotations/
 │       ├── generated-test-sources/
@@ -61,12 +50,8 @@ thetwelfthmove/
 │       │   └── maven-compiler-plugin/
 │       │       ├── compile/
 │       │       │   └── default-compile/
-│       │       │       ├── createdFiles.lst
-│       │       │       └── inputFiles.lst
 │       │       └── testCompile/
 │       │           └── default-testCompile/
-│       │           ├── createdFiles.lst
-│       │           └── inputFiles.lst
 │       └── test-classes/
 └── frontend/     #Contains the React frontend application using Vite.
     ├── eslint.config.js      #ESLint configuration.
@@ -88,18 +73,24 @@ thetwelfthmove/
         │   ├── ChessBoard.jsx      #Chess board component.
         │   ├── ChessPieces.jsx
         │   ├── Dashboard.jsx
+        │   ├── GameCodeDisplay.jsx
         │   ├── GamePage.jsx
         │   ├── Login.jsx
         │   ├── ProtectedRoute.jsx
-        │   └── Signup.jsx
+        │   ├── Signup.jsx
+        │   └── WaitingForOpponent.jsx  
+        ├── hooks/
+        │   └── useGamePolling.js
         ├── context/
         │   └── AuthContext.jsx     #Authentication context.
         └── styles/     #Stylesheets.
             ├── chessboard.css
             ├── dashboard.css
+            ├── gamecode.css
             ├── gamepage.css
             ├── login.css
             ├── main.css      #Main styles.
             ├── root.css      #Root styles.
-            └── signup.css
+            ├── signup.css
+            └── waiting.css
 ```

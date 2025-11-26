@@ -236,6 +236,7 @@ public class GameController {
     };
 
     // Make a move
+    // Replace the makeMoveHandler in GameController.java with this fixed version:
     private static Handler makeMoveHandler = ctx -> {
         try {
             String authHeader = ctx.header("Authorization");
@@ -294,9 +295,15 @@ public class GameController {
             // Load board
             ChessBoard board = ChessBoard.fromJson(game.getBoardState());
             
-            // Validate move
+            // Validate move (basic chess rules)
             if (!board.isValidMove(from, to, currentTurn)) {
                 ctx.status(400).json(Map.of("error", "Invalid move"));
+                return;
+            }
+
+            // *** FIX: Check if move would leave own king in check ***
+            if (board.wouldMoveCauseCheck(from, to, currentTurn)) {
+                ctx.status(400).json(Map.of("error", "Move would leave your king in check"));
                 return;
             }
 
