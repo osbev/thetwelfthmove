@@ -8,6 +8,14 @@ import java.util.*;
 
 public class ChessBoard {
     private ChessPiece[][] board; // 8x8 board
+    private boolean whiteKingMoved = false;
+    private boolean blackKingMoved = false;
+    private boolean whiteRookKingsideMoved = false;
+    private boolean whiteRookQueensideMoved = false;
+    private boolean blackRookKingsideMoved = false;
+    private boolean blackRookQueensideMoved = false;
+    private String enPassantTarget = null; // Square where en passant is possible (e.g., "e3")
+    
     private static final Gson gson = new Gson();
 
     public ChessBoard() {
@@ -48,14 +56,45 @@ public class ChessBoard {
 
     // Convert board to JSON string for storage
     public String toJson() {
-        return gson.toJson(board);
+        Map<String, Object> state = new HashMap<>();
+        state.put("board", board);
+        state.put("whiteKingMoved", whiteKingMoved);
+        state.put("blackKingMoved", blackKingMoved);
+        state.put("whiteRookKingsideMoved", whiteRookKingsideMoved);
+        state.put("whiteRookQueensideMoved", whiteRookQueensideMoved);
+        state.put("blackRookKingsideMoved", blackRookKingsideMoved);
+        state.put("blackRookQueensideMoved", blackRookQueensideMoved);
+        state.put("enPassantTarget", enPassantTarget);
+        return gson.toJson(state);
     }
 
     // Load board from JSON string
     public static ChessBoard fromJson(String json) {
         ChessBoard chessBoard = new ChessBoard();
-        Type type = new TypeToken<ChessPiece[][]>(){}.getType();
-        chessBoard.board = gson.fromJson(json, type);
+        try {
+            Type type = new TypeToken<Map<String, Object>>(){}.getType();
+            Map<String, Object> state = gson.fromJson(json, type);
+            
+            // Load board
+            String boardJson = gson.toJson(state.get("board"));
+            Type boardType = new TypeToken<ChessPiece[][]>(){}.getType();
+            chessBoard.board = gson.fromJson(boardJson, boardType);
+            
+            // Load castling rights
+            chessBoard.whiteKingMoved = state.get("whiteKingMoved") != null ? (Boolean) state.get("whiteKingMoved") : false;
+            chessBoard.blackKingMoved = state.get("blackKingMoved") != null ? (Boolean) state.get("blackKingMoved") : false;
+            chessBoard.whiteRookKingsideMoved = state.get("whiteRookKingsideMoved") != null ? (Boolean) state.get("whiteRookKingsideMoved") : false;
+            chessBoard.whiteRookQueensideMoved = state.get("whiteRookQueensideMoved") != null ? (Boolean) state.get("whiteRookQueensideMoved") : false;
+            chessBoard.blackRookKingsideMoved = state.get("blackRookKingsideMoved") != null ? (Boolean) state.get("blackRookKingsideMoved") : false;
+            chessBoard.blackRookQueensideMoved = state.get("blackRookQueensideMoved") != null ? (Boolean) state.get("blackRookQueensideMoved") : false;
+            
+            // Load en passant target
+            chessBoard.enPassantTarget = (String) state.get("enPassantTarget");
+        } catch (Exception e) {
+            // Fallback for old format (just board array)
+            Type boardType = new TypeToken<ChessPiece[][]>(){}.getType();
+            chessBoard.board = gson.fromJson(json, boardType);
+        }
         return chessBoard;
     }
 
@@ -89,7 +128,7 @@ public class ChessBoard {
         return "" + file + rank;
     }
 
-    // Validate if a move is legal
+    // Validate if a move is legal (NO LONGER CHECKS IF MOVE PUTS OWN KING IN CHECK)
     public boolean isValidMove(String from, String to, String playerColor) {
         int[] fromPos = notationToIndices(from);
         int[] toPos = notationToIndices(to);
@@ -105,7 +144,7 @@ public class ChessBoard {
         // Check if it's the player's piece
         if (!piece.getColor().equals(playerColor)) return false;
         
-        // Check if target has own piece
+        // Check if target has own piece (can't capture own pieces)
         if (targetPiece != null && targetPiece.getColor().equals(playerColor)) return false;
         
         // Validate move based on piece type
@@ -127,17 +166,14 @@ public class ChessBoard {
                 validMove = isValidQueenMove(fromPos, toPos);
                 break;
             case "king":
-                validMove = isValidKingMove(fromPos, toPos);
+                validMove = isValidKingMove(fromPos, toPos, piece.getColor());
                 break;
         }
         
-        if (!validMove) return false;
-        
-        // Check if move would put own king in check (simulate move)
-        return !wouldBeInCheck(fromPos, toPos, playerColor);
+        return validMove;
     }
 
-    // Pawn movement validation
+    // Pawn movement validation (includes en passant)
     private boolean isValidPawnMove(int[] from, int[] to, String color, ChessPiece target) {
         int direction = color.equals("white") ? -1 : 1;
         int startRow = color.equals("white") ? 6 : 1;
@@ -156,8 +192,15 @@ public class ChessBoard {
         }
         
         // Diagonal capture
-        if (colDiff == 1 && rowDiff == direction && target != null) {
-            return true;
+        if (colDiff == 1 && rowDiff == direction) {
+            // Regular capture
+            if (target != null) return true;
+            
+            // En passant
+            String toSquare = indicesToNotation(to[0], to[1]);
+            if (toSquare.equals(enPassantTarget)) {
+                return true;
+            }
         }
         
         return false;
@@ -192,11 +235,82 @@ public class ChessBoard {
         return isValidRookMove(from, to) || isValidBishopMove(from, to);
     }
 
-    // King movement validation
-    private boolean isValidKingMove(int[] from, int[] to) {
+    // King movement validation (includes castling)
+    private boolean isValidKingMove(int[] from, int[] to, String color) {
         int rowDiff = Math.abs(to[0] - from[0]);
         int colDiff = Math.abs(to[1] - from[1]);
-        return rowDiff <= 1 && colDiff <= 1;
+        
+        // Normal king move (one square)
+        if (rowDiff <= 1 && colDiff <= 1) return true;
+        
+        // Castling
+        if (rowDiff == 0 && colDiff == 2) {
+            return canCastle(from, to, color);
+        }
+        
+        return false;
+    }
+
+    // Check if castling is valid
+    private boolean canCastle(int[] from, int[] to, String color) {
+        // King must not have moved
+        if (color.equals("white") && whiteKingMoved) return false;
+        if (color.equals("black") && blackKingMoved) return false;
+        
+        // Determine kingside or queenside
+        boolean kingside = to[1] > from[1];
+        int rookCol = kingside ? 7 : 0;
+        int row = from[0];
+        
+        // Rook must not have moved
+        if (color.equals("white")) {
+            if (kingside && whiteRookKingsideMoved) return false;
+            if (!kingside && whiteRookQueensideMoved) return false;
+        } else {
+            if (kingside && blackRookKingsideMoved) return false;
+            if (!kingside && blackRookQueensideMoved) return false;
+        }
+        
+        // Check if rook exists
+        ChessPiece rook = getPiece(row, rookCol);
+        if (rook == null || !rook.getType().equals("rook")) return false;
+        
+        // Path must be clear between king and rook
+        int start = Math.min(from[1], rookCol) + 1;
+        int end = Math.max(from[1], rookCol);
+        for (int col = start; col < end; col++) {
+            if (getPiece(row, col) != null) return false;
+        }
+        
+        // King must not be in check
+        if (isKingInCheck(color)) return false;
+        
+        // King must not move through check
+        int direction = kingside ? 1 : -1;
+        for (int i = 0; i <= 2; i++) {
+            int col = from[1] + (i * direction);
+            if (isSquareUnderAttack(row, col, color)) return false;
+        }
+        
+        return true;
+    }
+
+    // Check if a square is under attack by opponent
+    private boolean isSquareUnderAttack(int row, int col, String playerColor) {
+        String opponentColor = playerColor.equals("white") ? "black" : "white";
+        
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                ChessPiece piece = getPiece(r, c);
+                if (piece != null && piece.getColor().equals(opponentColor)) {
+                    if (canPieceAttack(new int[]{r, c}, new int[]{row, col})) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
     }
 
     // Check if path between two squares is clear (for rook, bishop, queen)
@@ -214,24 +328,6 @@ public class ChessBoard {
         }
         
         return true;
-    }
-
-    // Check if a move would result in check for the moving player
-    private boolean wouldBeInCheck(int[] from, int[] to, String playerColor) {
-        // Simulate the move
-        ChessPiece movingPiece = getPiece(from[0], from[1]);
-        ChessPiece capturedPiece = getPiece(to[0], to[1]);
-        
-        board[to[0]][to[1]] = movingPiece;
-        board[from[0]][from[1]] = null;
-        
-        boolean inCheck = isKingInCheck(playerColor);
-        
-        // Undo the move
-        board[from[0]][from[1]] = movingPiece;
-        board[to[0]][to[1]] = capturedPiece;
-        
-        return inCheck;
     }
 
     // Check if a player's king is in check
@@ -290,13 +386,15 @@ public class ChessBoard {
             case "queen":
                 return isValidQueenMove(from, to);
             case "king":
-                return isValidKingMove(from, to);
+                int r = Math.abs(to[0] - from[0]);
+                int c = Math.abs(to[1] - from[1]);
+                return r <= 1 && c <= 1;
         }
         
         return false;
     }
 
-    // Check if it's checkmate
+    // Check if it's checkmate (player has NO legal moves that get out of check)
     public boolean isCheckmate(String playerColor) {
         if (!isKingInCheck(playerColor)) return false;
         
@@ -309,8 +407,25 @@ public class ChessBoard {
                         for (int toCol = 0; toCol < 8; toCol++) {
                             String from = indicesToNotation(fromRow, fromCol);
                             String to = indicesToNotation(toRow, toCol);
+                            
+                            // Check if move is valid (basic rules)
                             if (isValidMove(from, to, playerColor)) {
-                                return false; // Found a valid move
+                                // Simulate move and check if still in check
+                                ChessPiece movingPiece = getPiece(fromRow, fromCol);
+                                ChessPiece capturedPiece = getPiece(toRow, toCol);
+                                
+                                board[toRow][toCol] = movingPiece;
+                                board[fromRow][fromCol] = null;
+                                
+                                boolean stillInCheck = isKingInCheck(playerColor);
+                                
+                                // Undo move
+                                board[fromRow][fromCol] = movingPiece;
+                                board[toRow][toCol] = capturedPiece;
+                                
+                                if (!stillInCheck) {
+                                    return false; // Found a move that gets out of check
+                                }
                             }
                         }
                     }
@@ -318,7 +433,7 @@ public class ChessBoard {
             }
         }
         
-        return true; // No valid moves, it's checkmate
+        return true; // No valid moves that get out of check - checkmate
     }
 
     // Execute a move (assumes move is valid)
@@ -329,13 +444,171 @@ public class ChessBoard {
         ChessPiece piece = getPiece(fromPos[0], fromPos[1]);
         ChessPiece capturedPiece = getPiece(toPos[0], toPos[1]);
         
+        // Handle en passant capture
+        if (piece.getType().equals("pawn") && to.equals(enPassantTarget)) {
+            int captureRow = piece.getColor().equals("white") ? toPos[0] + 1 : toPos[0] - 1;
+            capturedPiece = getPiece(captureRow, toPos[1]);
+            board[captureRow][toPos[1]] = null;
+        }
+        
+        // Handle castling
+        if (piece.getType().equals("king") && Math.abs(toPos[1] - fromPos[1]) == 2) {
+            // Move rook
+            boolean kingside = toPos[1] > fromPos[1];
+            int rookFromCol = kingside ? 7 : 0;
+            int rookToCol = kingside ? toPos[1] - 1 : toPos[1] + 1;
+            
+            ChessPiece rook = getPiece(fromPos[0], rookFromCol);
+            board[fromPos[0]][rookToCol] = rook;
+            board[fromPos[0]][rookFromCol] = null;
+        }
+        
+        // Move piece
         board[toPos[0]][toPos[1]] = piece;
         board[fromPos[0]][fromPos[1]] = null;
+        
+        // Update castling rights
+        if (piece.getType().equals("king")) {
+            if (piece.getColor().equals("white")) {
+                whiteKingMoved = true;
+            } else {
+                blackKingMoved = true;
+            }
+        }
+        
+        if (piece.getType().equals("rook")) {
+            if (piece.getColor().equals("white")) {
+                if (fromPos[1] == 7) whiteRookKingsideMoved = true;
+                if (fromPos[1] == 0) whiteRookQueensideMoved = true;
+            } else {
+                if (fromPos[1] == 7) blackRookKingsideMoved = true;
+                if (fromPos[1] == 0) blackRookQueensideMoved = true;
+            }
+        }
+        
+        // Set en passant target if pawn moved two squares
+        enPassantTarget = null;
+        if (piece.getType().equals("pawn") && Math.abs(toPos[0] - fromPos[0]) == 2) {
+            int middleRow = (fromPos[0] + toPos[0]) / 2;
+            enPassantTarget = indicesToNotation(middleRow, fromPos[1]);
+        }
         
         return capturedPiece;
     }
 
     public ChessPiece[][] getBoard() {
         return board;
+    }
+    
+    public String getEnPassantTarget() {
+        return enPassantTarget;
+    }
+
+    /**
+     * Simulates a move (including special moves like castling and en passant) and checks if it causes playerColor's king to be in check after the move.
+     * Does not modify state permanently.
+     * @param from source square in notation (e.g. "e2")
+     * @param to target square in notation (e.g. "e4")
+     * @param playerColor "white" or "black"
+     * @return true if the move would leave player's king in check, false otherwise
+     */
+    public boolean wouldMoveCauseCheck(String from, String to, String playerColor) {
+        int[] fromPos = notationToIndices(from);
+        int[] toPos = notationToIndices(to);
+        
+        ChessPiece movingPiece = getPiece(fromPos[0], fromPos[1]);
+        ChessPiece targetPiece = getPiece(toPos[0], toPos[1]);
+        ChessPiece capturedPiece = targetPiece;
+        
+        if (movingPiece == null) return true; // No piece to move - treat as invalid
+        
+        // Backup state variables for castling and en passant flags to revert later
+        boolean oldWhiteKingMoved = whiteKingMoved;
+        boolean oldBlackKingMoved = blackKingMoved;
+        boolean oldWhiteRookKingsideMoved = whiteRookKingsideMoved;
+        boolean oldWhiteRookQueensideMoved = whiteRookQueensideMoved;
+        boolean oldBlackRookKingsideMoved = blackRookKingsideMoved;
+        boolean oldBlackRookQueensideMoved = blackRookQueensideMoved;
+        String oldEnPassantTarget = enPassantTarget;
+        
+        // Execute the move temporarily on the board including special moves
+        // Handle en passant capture
+        if (movingPiece.getType().equals("pawn") && to.equals(enPassantTarget)) {
+            int captureRow = movingPiece.getColor().equals("white") ? toPos[0] + 1 : toPos[0] - 1;
+            capturedPiece = getPiece(captureRow, toPos[1]);
+            board[captureRow][toPos[1]] = null;
+        }
+        
+        // Handle castling rook move when king moves two squares
+        if (movingPiece.getType().equals("king") && Math.abs(toPos[1] - fromPos[1]) == 2) {
+            boolean kingside = toPos[1] > fromPos[1];
+            int rookFromCol = kingside ? 7 : 0;
+            int rookToCol = kingside ? toPos[1] - 1 : toPos[1] + 1;
+            
+            ChessPiece rook = getPiece(fromPos[0], rookFromCol);
+            board[fromPos[0]][rookToCol] = rook;
+            board[fromPos[0]][rookFromCol] = null;
+        }
+        
+        // Move piece
+        board[toPos[0]][toPos[1]] = movingPiece;
+        board[fromPos[0]][fromPos[1]] = null;
+        
+        // Update castling rights if king or rook moved (simulate update)
+        if (movingPiece.getType().equals("king")) {
+            if (movingPiece.getColor().equals("white")) {
+                whiteKingMoved = true;
+            } else {
+                blackKingMoved = true;
+            }
+        }
+        
+        if (movingPiece.getType().equals("rook")) {
+            if (movingPiece.getColor().equals("white")) {
+                if (fromPos[1] == 7) whiteRookKingsideMoved = true;
+                if (fromPos[1] == 0) whiteRookQueensideMoved = true;
+            } else {
+                if (fromPos[1] == 7) blackRookKingsideMoved = true;
+                if (fromPos[1] == 0) blackRookQueensideMoved = true;
+            }
+        }
+        
+        // Clear en passant target to simulate move
+        enPassantTarget = null;
+        
+        // Check if player's king is in check after move
+        boolean isInCheck = isKingInCheck(playerColor);
+        
+        // Undo move - revert board and flags
+        board[fromPos[0]][fromPos[1]] = movingPiece;
+        board[toPos[0]][toPos[1]] = targetPiece;
+        
+        // Revert special en passant capture pawn
+        if (movingPiece.getType().equals("pawn") && to.equals(oldEnPassantTarget)) {
+            int captureRow = movingPiece.getColor().equals("white") ? toPos[0] + 1 : toPos[0] - 1;
+            board[captureRow][toPos[1]] = capturedPiece;
+        }
+        
+        // Revert castling rook move
+        if (movingPiece.getType().equals("king") && Math.abs(toPos[1] - fromPos[1]) == 2) {
+            boolean kingside = toPos[1] > fromPos[1];
+            int rookFromCol = kingside ? 7 : 0;
+            int rookToCol = kingside ? toPos[1] - 1 : toPos[1] + 1;
+            
+            ChessPiece rook = getPiece(fromPos[0], rookToCol);
+            board[fromPos[0]][rookFromCol] = rook;
+            board[fromPos[0]][rookToCol] = null;
+        }
+        
+        // Revert castling and en passant state flags
+        whiteKingMoved = oldWhiteKingMoved;
+        blackKingMoved = oldBlackKingMoved;
+        whiteRookKingsideMoved = oldWhiteRookKingsideMoved;
+        whiteRookQueensideMoved = oldWhiteRookQueensideMoved;
+        blackRookKingsideMoved = oldBlackRookKingsideMoved;
+        blackRookQueensideMoved = oldBlackRookQueensideMoved;
+        enPassantTarget = oldEnPassantTarget;
+        
+        return isInCheck;
     }
 }

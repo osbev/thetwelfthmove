@@ -61,4 +61,32 @@ public class PlayerDAO {
             return false;
         }
     }
+
+    // Add this method to your existing PlayerDAO.java
+
+    // Find player by ID
+    public Player findById(int playerId) {
+        try {
+            String sql = "SELECT * FROM players WHERE id = ?";
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setInt(1, playerId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                Player player = new Player();
+                player.setId(rs.getInt("id"));
+                player.setUsername(rs.getString("username"));
+                player.setPassword(rs.getString("password"));
+                player.setGamesPlayed(rs.getInt("games_played"));
+                player.setGamesWon(rs.getInt("games_won"));
+                return player;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error finding player: " + e.getMessage(), e);
+        }
+        return null;
+    }
 }
+
+

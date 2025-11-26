@@ -1,13 +1,6 @@
-com\thetwelfthmove\models\Player.class
+com\thetwelfthmove\utils\JWTUtil.class
 com\thetwelfthmove\App.class
 com\thetwelfthmove\models\ChessPiece.class
-com\thetwelfthmove\dao\PlayerDAO.class
-com\thetwelfthmove\controllers\AuthController.class
 com\thetwelfthmove\dao\DatabaseConnection.class
-com\thetwelfthmove\controllers\GameController.class
-com\thetwelfthmove\utils\JWTUtil.class
 com\thetwelfthmove\models\ChessBoard.class
-com\thetwelfthmove\models\Game.class
 com\thetwelfthmove\models\ChessBoard$1.class
-com\thetwelfthmove\models\Move.class
-com\thetwelfthmove\dao\GameDAO.class

@@ -61,7 +61,7 @@ export default function ChessBoard({
     return moves;
   };
 
-  // Pawn moves
+  // Pawn moves (includes en passant possibility)
   const getValidPawnMoves = (row, col, color) => {
     const moves = [];
     const direction = color === 'white' ? -1 : 1;
@@ -81,13 +81,23 @@ export default function ChessBoard({
       }
     }
 
-    // Diagonal captures
+    // Diagonal captures (regular and en passant)
     [-1, 1].forEach(colOffset => {
       const newCol = col + colOffset;
       if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
         const target = board[newRow][newCol];
+        // Regular capture
         if (target && target.color !== color) {
           moves.push(toNotation(newRow, newCol));
+        }
+        // En passant - show diagonal move even if square is empty
+        // Backend will validate if en passant is legal
+        else if (!target) {
+          const adjacentPiece = board[row][newCol];
+          if (adjacentPiece && adjacentPiece.type === 'pawn' && adjacentPiece.color !== color) {
+            // Might be en passant, show as valid move
+            moves.push(toNotation(newRow, newCol));
+          }
         }
       }
     });
@@ -179,7 +189,7 @@ export default function ChessBoard({
     ];
   };
 
-  // King moves
+  // King moves (includes castling)
   const getValidKingMoves = (row, col, color) => {
     const moves = [];
     const directions = [
@@ -188,6 +198,7 @@ export default function ChessBoard({
       [1, -1], [1, 0], [1, 1]
     ];
 
+    // Normal king moves (one square in any direction)
     directions.forEach(([dRow, dCol]) => {
       const newRow = row + dRow;
       const newCol = col + dCol;
@@ -198,6 +209,29 @@ export default function ChessBoard({
         }
       }
     });
+
+    // Castling (kingside and queenside)
+    // Note: Backend will validate if castling is actually legal
+    // We just show it as a possible move if king hasn't moved
+    const isStartingPosition = (color === 'white' && row === 7 && col === 4) ||
+                               (color === 'black' && row === 0 && col === 4);
+    
+    if (isStartingPosition) {
+      // Kingside castling (king moves 2 squares right)
+      const kingsideTarget = board[row][col + 1];
+      const kingsideTarget2 = board[row][col + 2];
+      if (!kingsideTarget && !kingsideTarget2) {
+        moves.push(toNotation(row, col + 2));
+      }
+      
+      // Queenside castling (king moves 2 squares left)
+      const queensideTarget = board[row][col - 1];
+      const queensideTarget2 = board[row][col - 2];
+      const queensideTarget3 = board[row][col - 3];
+      if (!queensideTarget && !queensideTarget2 && !queensideTarget3) {
+        moves.push(toNotation(row, col - 2));
+      }
+    }
 
     return moves;
   };

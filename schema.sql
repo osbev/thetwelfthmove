@@ -21,15 +21,17 @@ ON DUPLICATE KEY UPDATE username=username;
 CREATE TABLE IF NOT EXISTS games (
     game_id INT AUTO_INCREMENT PRIMARY KEY,
     player1_id INT NOT NULL,
-    player2_id INT, -- nullable for future AI or guest
+    player2_id INT, -- nullable until someone joins
+    game_code VARCHAR(50) UNIQUE, -- unique code for joining game (e.g., "u-skibidi-gyatt-67")
     current_turn VARCHAR(10) DEFAULT 'white', -- 'white' or 'black'
     board_state TEXT NOT NULL, -- JSON representation of the board
     start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     end_time TIMESTAMP NULL,
     duration INT, -- duration in seconds
     winner_id INT, -- NULL for draw or ongoing
-    status VARCHAR(20) DEFAULT 'ongoing', -- 'ongoing', 'completed', 'draw', 'abandoned'
+    status VARCHAR(20) DEFAULT 'waiting', -- 'waiting', 'ongoing', 'completed', 'draw', 'abandoned'
     result VARCHAR(20), -- 'white_wins', 'black_wins', 'draw', 'checkmate', 'stalemate'
+    last_move_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- track when last move was made
     CONSTRAINT fk_player1 FOREIGN KEY (player1_id) REFERENCES players(id),
     CONSTRAINT fk_player2 FOREIGN KEY (player2_id) REFERENCES players(id),
     CONSTRAINT fk_winner FOREIGN KEY (winner_id) REFERENCES players(id)
@@ -57,4 +59,6 @@ CREATE TABLE IF NOT EXISTS moves (
 -- Index for faster queries
 CREATE INDEX idx_game_status ON games(status);
 CREATE INDEX idx_game_player ON games(player1_id, player2_id);
+CREATE INDEX idx_game_code ON games(game_code);
 CREATE INDEX idx_moves_game ON moves(game_id);
+CREATE INDEX idx_last_move_time ON games(last_move_time);

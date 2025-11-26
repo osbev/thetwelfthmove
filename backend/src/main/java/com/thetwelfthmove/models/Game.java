@@ -7,24 +7,27 @@ public class Game {
     private int gameId;
     private int player1Id;
     private Integer player2Id; // Nullable
+    private String gameCode; // Unique code for joining
     private String currentTurn; // "white" or "black"
     private String boardState; // JSON string
     private Timestamp startTime;
     private Timestamp endTime;
     private Integer duration; // in seconds
     private Integer winnerId; // Nullable
-    private String status; // "ongoing", "completed", "draw", "abandoned"
+    private String status; // "waiting", "ongoing", "completed", "draw", "abandoned"
     private String result; // "white_wins", "black_wins", "draw", "checkmate", "stalemate"
+    private Timestamp lastMoveTime; // Track last move for polling
 
     // Constructors
     public Game() {}
 
-    public Game(int player1Id, Integer player2Id, String boardState) {
+    public Game(int player1Id, Integer player2Id, String boardState, String gameCode) {
         this.player1Id = player1Id;
         this.player2Id = player2Id;
         this.boardState = boardState;
+        this.gameCode = gameCode;
         this.currentTurn = "white";
-        this.status = "ongoing";
+        this.status = player2Id == null ? "waiting" : "ongoing";
     }
 
     // Getters and Setters
@@ -50,6 +53,14 @@ public class Game {
 
     public void setPlayer2Id(Integer player2Id) {
         this.player2Id = player2Id;
+    }
+
+    public String getGameCode() {
+        return gameCode;
+    }
+
+    public void setGameCode(String gameCode) {
+        this.gameCode = gameCode;
     }
 
     public String getCurrentTurn() {
@@ -114,5 +125,13 @@ public class Game {
 
     public void setResult(String result) {
         this.result = result;
+    }
+
+    public Timestamp getLastMoveTime() {
+        return lastMoveTime;
+    }
+
+    public void setLastMoveTime(Timestamp lastMoveTime) {
+        this.lastMoveTime = lastMoveTime;
     }
 }

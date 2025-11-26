@@ -1,0 +1,127 @@
+/* /frontend/src/styles/waiting.css */
+
+.waiting-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.waiting-content {
+  max-width: 500px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.waiting-animation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 120px;
+  position: relative;
+}
+
+.chess-pieces-floating {
+  position: relative;
+  width: 200px;
+  height: 100px;
+}
+
+.float-piece {
+  position: absolute;
+  font-size: 48px;
+  animation: floatPiece 3s ease-in-out infinite;
+  filter: drop-shadow(0 4px 8px rgba(109, 213, 237, 0.3));
+}
+
+.float-piece.p1 {
+  left: 20%;
+  animation-delay: 0s;
+}
+
+.float-piece.p2 {
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: 0.5s;
+}
+
+.float-piece.p3 {
+  right: 20%;
+  animation-delay: 1s;
+}
+
+@keyframes floatPiece {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-20px);
+    opacity: 1;
+  }
+}
+
+.waiting-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(109, 213, 237, 0.3);
+}
+
+.waiting-subtitle {
+  font-size: 15px;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.waiting-tips {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.waiting-tips h4 {
+  margin: 0 0 12px 0;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.waiting-tips ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.waiting-tips li {
+  padding: 8px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.waiting-tips li:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}

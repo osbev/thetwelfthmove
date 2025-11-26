@@ -1,21 +1,63 @@
 // /frontend/src/components/Dashboard.jsx
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../styles/dashboard.css";
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const navigate = useNavigate();
+  const [recentGames, setRecentGames] = useState([]);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [gameCode, setGameCode] = useState("");
+  const [joinError, setJoinError] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
 
-  const { token } = useAuth();
+  useEffect(() => {
+    if (user) {
+      loadRecentGames();
+    }
+  }, [user]);
+
+  const loadRecentGames = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:7000/games/player/${user.id}/recent?limit=5`
+      );
+      setRecentGames(response.data.games);
+    } catch (error) {
+      console.error('Failed to load recent games:', error);
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
     navigate("/login");
   };
 
-  const handleCreateGame = async () => {
+  const handleCreateLocalGame = async () => {
+    try {
+      const response = await axios.post(
+        'http://localhost:7000/games/create-local',
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.game) {
+        navigate(`/game/${response.data.game.gameId}`);
+      }
+    } catch (error) {
+      console.error('Failed to create local game:', error);
+      alert('Failed to create game. Please try again.');
+    }
+  };
+
+  const handleCreatePrivateGame = async () => {
     try {
       const response = await axios.post(
         'http://localhost:7000/games/create',
@@ -33,6 +75,35 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Failed to create game:', error);
       alert('Failed to create game. Please try again.');
+    }
+  };
+
+  const handleJoinGame = async () => {
+    if (!gameCode.trim()) {
+      setJoinError("Please enter a game code");
+      return;
+    }
+
+    setIsJoining(true);
+    setJoinError("");
+
+    try {
+      const response = await axios.post(
+        'http://localhost:7000/games/join',
+        { gameCode: gameCode.trim().toLowerCase() },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.game) {
+        navigate(`/game/${response.data.game.gameId}`);
+      }
+    } catch (error) {
+      setJoinError(error.response?.data?.error || 'Failed to join game');
+      setIsJoining(false);
     }
   };
 
@@ -98,17 +169,30 @@ export default function Dashboard() {
 
         <div className="action-grid">
           <div className="action-card">
-            <div className="action-icon">⚔️</div>
-            <h3>Quick Match</h3>
-            <p>Find an opponent and start playing</p>
-            <button className="action-btn primary">Find Match</button>
+            <div className="action-icon">🎮</div>
+            <h3>Local 2-Player</h3>
+            <p>Play on the same device, pass and play</p>
+            <button className="action-btn primary" onClick={handleCreateLocalGame}>
+              Play Locally
+            </button>
           </div>
 
           <div className="action-card">
-            <div className="action-icon">🎮</div>
-            <h3>Create Game</h3>
-            <p>Start a new local 2-player chess game</p>
-            <button className="action-btn primary" onClick={handleCreateGame}>Create Game</button>
+            <div className="action-icon">🌐</div>
+            <h3>Online Multiplayer</h3>
+            <p>Get a game code to share with a friend</p>
+            <button className="action-btn primary" onClick={handleCreatePrivateGame}>
+              Create Online Game
+            </button>
+          </div>
+
+          <div className="action-card">
+            <div className="action-icon">🔗</div>
+            <h3>Join Game</h3>
+            <p>Enter a friend's game code to join</p>
+            <button className="action-btn primary" onClick={() => setShowJoinModal(true)}>
+              Join Game
+            </button>
           </div>
 
           <div className="action-card">
@@ -121,16 +205,78 @@ export default function Dashboard() {
 
         <div className="recent-games">
           <h2>Recent Games</h2>
-          <div className="empty-state">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <path d="M3 9h18M9 21V9" />
-            </svg>
-            <p>No games played yet</p>
-            <p className="empty-subtitle">Start your first match to see your game history</p>
-          </div>
+          {recentGames.length > 0 ? (
+            <div className="games-list">
+              {recentGames.map((gameData) => (
+                <div key={gameData.game.gameId} className="game-item">
+                  <div className="game-result">
+                    {gameData.won ? '🏆 Win' : '😔 Loss'}
+                  </div>
+                  <div className="game-details">
+                    <p className="game-opponent">vs {gameData.opponentUsername}</p>
+                    <p className="game-date">
+                      {new Date(gameData.game.endTime).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <button 
+                    className="view-game-btn"
+                    onClick={() => navigate(`/game/${gameData.game.gameId}`)}
+                  >
+                    View
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M3 9h18M9 21V9" />
+              </svg>
+              <p>No games played yet</p>
+              <p className="empty-subtitle">Start your first match to see your game history</p>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Join Game Modal */}
+      {showJoinModal && (
+        <div className="modal-overlay" onClick={() => setShowJoinModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Join Game</h2>
+            <p className="modal-subtitle">Enter your friend's game code</p>
+            
+            <input
+              type="text"
+              className="game-code-input"
+              placeholder="u-skibidi-gyatt-67"
+              value={gameCode}
+              onChange={(e) => setGameCode(e.target.value)}
+              disabled={isJoining}
+            />
+            
+            {joinError && <p className="error-message">{joinError}</p>}
+            
+            <div className="modal-actions">
+              <button 
+                className="modal-btn cancel" 
+                onClick={() => setShowJoinModal(false)}
+                disabled={isJoining}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-btn join" 
+                onClick={handleJoinGame}
+                disabled={isJoining}
+              >
+                {isJoining ? 'Joining...' : 'Join Game'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

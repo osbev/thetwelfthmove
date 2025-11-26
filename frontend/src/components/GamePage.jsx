@@ -1,9 +1,12 @@
 // /frontend/src/components/GamePage.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import ChessBoard from "./ChessBoard";
+import WaitingForOpponent from "./WaitingForOpponent";
+import GameCodeDisplay from "./GameCodeDisplay";
+import useGamePolling from "../hooks/useGamePolling";
 import "../styles/gamepage.css";
 
 export default function GamePage() {
@@ -21,27 +24,90 @@ export default function GamePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [flipped, setFlipped] = useState(false);
+  const [player1Username, setPlayer1Username] = useState("");
+  const [player2Username, setPlayer2Username] = useState("");
+  const [isMyTurn, setIsMyTurn] = useState(false);
 
-  // Load game state
+  // Initial load
   useEffect(() => {
     loadGame();
-    loadMoves();
   }, [gameId]);
 
-  // Auto-flip board based on turn (for 2-player local)
-  useEffect(() => {
-    if (game && game.currentTurn === 'black') {
-      setFlipped(true);
-    } else {
-      setFlipped(false);
+  // Polling callback
+  const handlePollUpdate = useCallback((data) => {
+    if (data.game) {
+      setGame(data.game);
+      
+      // Update player usernames if available
+      if (data.player1Username) setPlayer1Username(data.player1Username);
+      if (data.player2Username) setPlayer2Username(data.player2Username);
     }
-  }, [game?.currentTurn]);
+    
+    if (data.board) {
+      setBoard(data.board);
+    }
+    
+    if (data.moves) {
+      setMoves(data.moves);
+      updateCapturedPieces(data.moves);
+      
+      if (data.moves.length > 0) {
+        const last = data.moves[data.moves.length - 1];
+        setLastMove({ from: last.fromSquare, to: last.toSquare });
+        setIsCheck(last.isCheck);
+        setIsCheckmate(last.isCheckmate);
+      }
+    }
+  }, []);
+
+  // Enable polling only when game is online multiplayer (has game code and not local)
+  const isLocalGame = game && game.player1Id === game.player2Id;
+  const pollingEnabled = game && !isLocalGame && (game.status === 'ongoing' || game.status === 'waiting');
+  const { opponentMoved } = useGamePolling(gameId, handlePollUpdate, pollingEnabled);
+
+  // Auto-flip board based on player (for online) or turn (for local)
+  useEffect(() => {
+    if (game && user) {
+      const isLocalGame = game.player1Id === game.player2Id;
+      
+      if (isLocalGame) {
+        // Local game: flip based on turn
+        setFlipped(game.currentTurn === 'black');
+        setIsMyTurn(true); // Always your turn in local mode
+      } else {
+        // Online game: flip based on player color
+        const isPlayer2 = game.player2Id === user.id;
+        setFlipped(isPlayer2);
+        
+        // Check if it's my turn
+        const currentTurn = game.currentTurn;
+        const myTurn = (currentTurn === 'white' && game.player1Id === user.id) ||
+                       (currentTurn === 'black' && game.player2Id === user.id);
+        setIsMyTurn(myTurn);
+      }
+    }
+  }, [game, user]);
 
   const loadGame = async () => {
     try {
       const response = await axios.get(`http://localhost:7000/games/${gameId}`);
       setGame(response.data.game);
       setBoard(response.data.board);
+      setPlayer1Username(response.data.player1Username);
+      setPlayer2Username(response.data.player2Username);
+      
+      // Load moves
+      const movesResponse = await axios.get(`http://localhost:7000/games/${gameId}/moves`);
+      setMoves(movesResponse.data.moves);
+      updateCapturedPieces(movesResponse.data.moves);
+      
+      if (movesResponse.data.moves.length > 0) {
+        const last = movesResponse.data.moves[movesResponse.data.moves.length - 1];
+        setLastMove({ from: last.fromSquare, to: last.toSquare });
+        setIsCheck(last.isCheck);
+        setIsCheckmate(last.isCheckmate);
+      }
+      
       setLoading(false);
     } catch (err) {
       setError("Failed to load game");
@@ -49,30 +115,18 @@ export default function GamePage() {
     }
   };
 
-  const loadMoves = async () => {
-    try {
-      const response = await axios.get(`http://localhost:7000/games/${gameId}/moves`);
-      setMoves(response.data.moves);
-
-      const captured = { white: [], black: [] };
-      response.data.moves.forEach(move => {
-        if (move.capturedPiece) {
-          if (move.pieceColor === 'white') {
-            captured.black.push(move.capturedPiece);
-          } else {
-            captured.white.push(move.capturedPiece);
-          }
+  const updateCapturedPieces = (movesList) => {
+    const captured = { white: [], black: [] };
+    movesList.forEach(move => {
+      if (move.capturedPiece) {
+        if (move.pieceColor === 'white') {
+          captured.black.push(move.capturedPiece);
+        } else {
+          captured.white.push(move.capturedPiece);
         }
-      });
-      setCapturedPieces(captured);
-
-      if (response.data.moves.length > 0) {
-        const last = response.data.moves[response.data.moves.length - 1];
-        setLastMove({ from: last.fromSquare, to: last.toSquare });
       }
-    } catch (err) {
-      console.error("Failed to load moves", err);
-    }
+    });
+    setCapturedPieces(captured);
   };
 
   const handleMove = async (from, to) => {
@@ -87,17 +141,20 @@ export default function GamePage() {
         }
       );
 
+      // Update state immediately
       setBoard(response.data.board);
       setIsCheck(response.data.isCheck);
       setIsCheckmate(response.data.isCheckmate);
       setLastMove({ from, to });
-
       setGame(prev => ({
         ...prev,
         currentTurn: response.data.nextTurn,
       }));
 
-      loadMoves();
+      // Reload moves
+      const movesResponse = await axios.get(`http://localhost:7000/games/${gameId}/moves`);
+      setMoves(movesResponse.data.moves);
+      updateCapturedPieces(movesResponse.data.moves);
 
       if (response.data.isCheckmate) {
         setTimeout(() => {
@@ -162,19 +219,64 @@ export default function GamePage() {
     );
   }
 
+  // Show waiting screen if game is waiting for player 2
+  if (game && game.status === 'waiting') {
+    return (
+      <div className="game-page">
+        <WaitingForOpponent gameCode={game.gameCode} />
+      </div>
+    );
+  }
+
   return (
     <div className="game-page">
-      <div className="game-content">
+      {/* Opponent moved notification (only for online games) */}
+      {opponentMoved && !isLocalGame && (
+        <div className="opponent-notification">
+          🎯 Opponent moved!
+        </div>
+      )}
 
-        {/* LEFT PANEL — Status + Actions */}
+      <div className="game-content">
+        {/* LEFT PANEL */}
         <div className="left-panel">
           <div className="status-card">
             <h2>Game Status</h2>
+            
+            {/* Game Code Display (only for online games) */}
+            {game.gameCode && (
+              <div className="code-mini">
+                <span className="code-label">Game:</span>
+                <span className="code-value">{game.gameCode}</span>
+              </div>
+            )}
+
+            {/* Player info (only for online games) */}
+            {!isLocalGame && (
+              <div className="players-info">
+                <div className="player-badge white">
+                  ⚪ {player1Username}
+                </div>
+                <div className="player-badge black">
+                  ⚫ {player2Username}
+                </div>
+              </div>
+            )}
+
+            {/* Local game indicator */}
+            {isLocalGame && (
+              <div className="local-game-badge">
+                🎮 Local 2-Player
+              </div>
+            )}
+
             <div className="turn-indicator">
               <div className={`turn-badge ${game.currentTurn}`}>
                 {game.currentTurn === 'white' ? '⚪' : '⚫'} {game.currentTurn.toUpperCase()}'s Turn
               </div>
+              {isMyTurn && <p className="your-turn">It's your turn!</p>}
             </div>
+
             {isCheck && !isCheckmate && (
               <div className="alert check-alert">⚠️ CHECK!</div>
             )}
@@ -191,12 +293,12 @@ export default function GamePage() {
               🏳️ Resign
             </button>
             <button className="action-btn back-btn" onClick={() => navigate("/dashboard")}>
-              ← Back to Dashboard
+              ← Back
             </button>
           </div>
         </div>
 
-        {/* CENTER — Chessboard */}
+        {/* CENTER - BOARD */}
         <div className="board-section">
           <ChessBoard
             board={board}
@@ -208,9 +310,8 @@ export default function GamePage() {
           />
         </div>
 
-        {/* RIGHT PANEL — Captured + Moves */}
+        {/* RIGHT PANEL */}
         <div className="right-panel">
-
           <div className="captured-card">
             <h3>Captured Pieces</h3>
             <div className="captured-section">
@@ -263,7 +364,6 @@ export default function GamePage() {
               )}
             </div>
           </div>
-
         </div>
       </div>
     </div>

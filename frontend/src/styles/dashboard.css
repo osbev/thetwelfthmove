@@ -310,3 +310,203 @@
     justify-content: center;
   }
 }
+
+/* Add these styles to your existing /frontend/src/styles/dashboard.css */
+
+/* Recent Games List */
+.games-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.game-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all var(--transition);
+}
+
+.game-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent);
+  transform: translateX(4px);
+}
+
+.game-result {
+  font-size: 18px;
+  font-weight: 700;
+  min-width: 80px;
+}
+
+.game-details {
+  flex: 1;
+}
+
+.game-opponent {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.game-date {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.view-game-btn {
+  padding: 8px 16px;
+  background: rgba(109, 213, 237, 0.1);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.view-game-btn:hover {
+  background: rgba(109, 213, 237, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Join Game Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-content h2 {
+  margin: 0 0 8px 0;
+  color: var(--text-primary);
+  font-size: 24px;
+  text-align: center;
+}
+
+.modal-subtitle {
+  margin: 0 0 24px 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.game-code-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 16px;
+  font-family: 'Courier New', monospace;
+  text-align: center;
+  transition: all var(--transition);
+  margin-bottom: 16px;
+}
+
+.game-code-input::placeholder {
+  color: var(--text-muted);
+}
+
+.game-code-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(109, 213, 237, 0.15);
+}
+
+.game-code-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: var(--danger);
+  font-size: 14px;
+  text-align: center;
+  margin: 0 0 16px 0;
+  animation: shake 0.3s ease;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 12px 24px;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  border: none;
+}
+
+.modal-btn.cancel {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.modal-btn.cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.modal-btn.join {
+  background: linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 100%);
+  color: #0a0a0f;
+  box-shadow: 0 4px 15px rgba(109, 213, 237, 0.3);
+}
+
+.modal-btn.join:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(109, 213, 237, 0.4);
+}
+
+.modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}

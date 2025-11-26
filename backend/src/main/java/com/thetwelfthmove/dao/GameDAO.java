@@ -4,6 +4,7 @@ package com.thetwelfthmove.dao;
 import com.thetwelfthmove.models.Game;
 import com.thetwelfthmove.models.Move;
 import com.thetwelfthmove.models.ChessBoard;
+import com.thetwelfthmove.utils.GameCodeGenerator;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -16,20 +17,17 @@ public class GameDAO {
         this.conn = DatabaseConnection.getConnection();
     }
 
-    // Create a new game
-    public Game createGame(int player1Id, Integer player2Id) {
+    // Create a local 2-player game (same device, no online features)
+    public Game createLocalGame(int playerId) {
         try {
             ChessBoard board = new ChessBoard();
             String boardJson = board.toJson();
             
-            String sql = "INSERT INTO games (player1_id, player2_id, board_state, current_turn, status) VALUES (?, ?, ?, 'white', 'ongoing')";
+            // No game code for local games, status is 'ongoing' immediately
+            String sql = "INSERT INTO games (player1_id, player2_id, board_state, current_turn, status, game_code) VALUES (?, ?, ?, 'white', 'ongoing', NULL)";
             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            stmt.setInt(1, player1Id);
-            if (player2Id != null) {
-                stmt.setInt(2, player2Id);
-            } else {
-                stmt.setNull(2, Types.INTEGER);
-            }
+            stmt.setInt(1, playerId);
+            stmt.setInt(2, playerId); // Same player for both (local mode indicator)
             stmt.setString(3, boardJson);
             
             int affected = stmt.executeUpdate();
@@ -44,6 +42,75 @@ public class GameDAO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    // Create a new game with unique code
+    public Game createGame(int player1Id, Integer player2Id) {
+        try {
+            ChessBoard board = new ChessBoard();
+            String boardJson = board.toJson();
+            
+            // Generate unique game code
+            String gameCode = generateUniqueGameCode();
+            
+            // Status is 'waiting' if no player2, 'ongoing' if player2 exists
+            String status = player2Id == null ? "waiting" : "ongoing";
+            
+            String sql = "INSERT INTO games (player1_id, player2_id, board_state, current_turn, status, game_code) VALUES (?, ?, ?, 'white', ?, ?)";
+            PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            stmt.setInt(1, player1Id);
+            if (player2Id != null) {
+                stmt.setInt(2, player2Id);
+            } else {
+                stmt.setNull(2, Types.INTEGER);
+            }
+            stmt.setString(3, boardJson);
+            stmt.setString(4, status);
+            stmt.setString(5, gameCode);
+            
+            int affected = stmt.executeUpdate();
+            if (affected > 0) {
+                ResultSet keys = stmt.getGeneratedKeys();
+                if (keys.next()) {
+                    int gameId = keys.getInt(1);
+                    return getGameById(gameId);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    // Generate unique game code
+    private String generateUniqueGameCode() throws SQLException {
+        String code;
+        int attempts = 0;
+        int maxAttempts = 10;
+        
+        do {
+            code = GameCodeGenerator.generateCode();
+            attempts++;
+            
+            if (attempts >= maxAttempts) {
+                throw new SQLException("Failed to generate unique game code after " + maxAttempts + " attempts");
+            }
+        } while (isGameCodeTaken(code));
+        
+        return code;
+    }
+
+    // Check if game code already exists
+    private boolean isGameCodeTaken(String code) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM games WHERE game_code = ?";
+        PreparedStatement stmt = conn.prepareStatement(sql);
+        stmt.setString(1, code);
+        ResultSet rs = stmt.executeQuery();
+        
+        if (rs.next()) {
+            return rs.getInt(1) > 0;
+        }
+        return false;
     }
 
     // Get game by ID
@@ -63,10 +130,49 @@ public class GameDAO {
         return null;
     }
 
+    // Get game by code
+    public Game getGameByCode(String gameCode) {
+        try {
+            String sql = "SELECT * FROM games WHERE game_code = ?";
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, gameCode);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return mapResultSetToGame(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    // Join game by code
+    public boolean joinGame(String gameCode, int player2Id) {
+        try {
+            // Check if game exists and is waiting
+            Game game = getGameByCode(gameCode);
+            if (game == null) return false;
+            if (!game.getStatus().equals("waiting")) return false;
+            if (game.getPlayer1Id() == player2Id) return false; // Can't join own game
+            
+            // Update game with player2 and change status to ongoing
+            String sql = "UPDATE games SET player2_id = ?, status = 'ongoing' WHERE game_code = ?";
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setInt(1, player2Id);
+            stmt.setString(2, gameCode);
+            
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     // Update game state
     public boolean updateGameState(int gameId, String boardState, String currentTurn) {
         try {
-            String sql = "UPDATE games SET board_state = ?, current_turn = ? WHERE game_id = ?";
+            String sql = "UPDATE games SET board_state = ?, current_turn = ?, last_move_time = NOW() WHERE game_id = ?";
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, boardState);
             stmt.setString(2, currentTurn);
@@ -196,6 +302,26 @@ public class GameDAO {
         return games;
     }
 
+    // Get recent completed games for a player (for dashboard)
+    public List<Game> getRecentGames(int playerId, int limit) {
+        List<Game> games = new ArrayList<>();
+        try {
+            String sql = "SELECT * FROM games WHERE (player1_id = ? OR player2_id = ?) AND status = 'completed' ORDER BY end_time DESC LIMIT ?";
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setInt(1, playerId);
+            stmt.setInt(2, playerId);
+            stmt.setInt(3, limit);
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                games.add(mapResultSetToGame(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return games;
+    }
+
     // Helper: Map ResultSet to Game
     private Game mapResultSetToGame(ResultSet rs) throws SQLException {
         Game game = new Game();
@@ -205,6 +331,7 @@ public class GameDAO {
         int player2Id = rs.getInt("player2_id");
         game.setPlayer2Id(rs.wasNull() ? null : player2Id);
         
+        game.setGameCode(rs.getString("game_code"));
         game.setCurrentTurn(rs.getString("current_turn"));
         game.setBoardState(rs.getString("board_state"));
         game.setStartTime(rs.getTimestamp("start_time"));
@@ -218,6 +345,7 @@ public class GameDAO {
         
         game.setStatus(rs.getString("status"));
         game.setResult(rs.getString("result"));
+        game.setLastMoveTime(rs.getTimestamp("last_move_time"));
         
         return game;
     }
