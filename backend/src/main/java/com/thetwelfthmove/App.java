@@ -4,6 +4,7 @@ package com.thetwelfthmove;
 import io.javalin.Javalin;
 import com.thetwelfthmove.controllers.AuthController;
 import com.thetwelfthmove.controllers.GameController;
+import com.thetwelfthmove.controllers.PlayerController; // ADD THIS IMPORT
 import com.thetwelfthmove.dao.DatabaseConnection;
 
 public class App {
@@ -27,12 +28,16 @@ public class App {
         
         // Register game routes
         GameController.registerRoutes(app);
+        
+        // Register player routes (NEW)
+        PlayerController.registerRoutes(app);
 
         System.out.println("The Twelfth Move backend is running on http://localhost:7000");
         System.out.println("Available endpoints:");
         System.out.println("  Auth: POST /signup, /login, /verify-token, /logout");
         System.out.println("  Game: POST /games/create, /games/{id}/move, /games/{id}/resign");
         System.out.println("        GET /games/{id}, /games/{id}/moves, /games/player/{id}");
+        System.out.println("  Player: GET /players/leaderboard"); // NEW
 
         // Optional: shutdown hook to close DB connection when app stops
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

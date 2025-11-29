@@ -1,4 +1,4 @@
-// /frontend/src/components/Dashboard.jsx
+// Replace your existing /frontend/src/components/Dashboard.jsx with this:
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [gameCode, setGameCode] = useState("");
   const [joinError, setJoinError] = useState("");
   const [isJoining, setIsJoining] = useState(false);
+  const [loadingGames, setLoadingGames] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -22,12 +23,15 @@ export default function Dashboard() {
 
   const loadRecentGames = async () => {
     try {
+      setLoadingGames(true);
       const response = await axios.get(
         `http://localhost:7000/games/player/${user.id}/recent?limit=5`
       );
       setRecentGames(response.data.games);
     } catch (error) {
       console.error('Failed to load recent games:', error);
+    } finally {
+      setLoadingGames(false);
     }
   };
 
@@ -110,6 +114,32 @@ export default function Dashboard() {
   const winRate = user?.gamesPlayed > 0 
     ? ((user.gamesWon / user.gamesPlayed) * 100).toFixed(1) 
     : 0;
+
+  const formatGameResult = (gameData) => {
+    const game = gameData.game;
+    
+    if (game.status === 'ongoing') {
+      return { icon: '⏳', text: 'In Progress', class: 'ongoing' };
+    }
+    
+    if (gameData.won) {
+      return { icon: '🏆', text: 'Victory', class: 'win' };
+    } else {
+      return { icon: '😔', text: 'Defeat', class: 'loss' };
+    }
+  };
+
+  const formatGameDate = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+  };
 
   return (
     <div className="dashboard-container">
@@ -199,33 +229,56 @@ export default function Dashboard() {
             <div className="action-icon">🏆</div>
             <h3>Leaderboard</h3>
             <p>View top players and rankings</p>
-            <button className="action-btn secondary">View Rankings</button>
+            <button className="action-btn secondary" onClick={() => navigate('/leaderboard')}>
+              View Rankings
+            </button>
+          </div>
+
+          <div className="action-card">
+            <div className="action-icon">📚</div>
+            <h3>Learn Chess</h3>
+            <p>Master strategies and tactics</p>
+            <button className="action-btn secondary" onClick={() => navigate('/guide')}>
+              Study Guide
+            </button>
           </div>
         </div>
 
         <div className="recent-games">
-          <h2>Recent Games</h2>
-          {recentGames.length > 0 ? (
+          <div className="section-header">
+            <h2>Recent Games</h2>
+          </div>
+
+          {loadingGames ? (
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <p>Loading games...</p>
+            </div>
+          ) : recentGames.length > 0 ? (
             <div className="games-list">
-              {recentGames.map((gameData) => (
-                <div key={gameData.game.gameId} className="game-item">
-                  <div className="game-result">
-                    {gameData.won ? '🏆 Win' : '😔 Loss'}
+              {recentGames.map((gameData) => {
+                const result = formatGameResult(gameData);
+                return (
+                  <div key={gameData.game.gameId} className="game-item">
+                    <div className={`game-result ${result.class}`}>
+                      <span className="result-icon">{result.icon}</span>
+                      <span className="result-text">{result.text}</span>
+                    </div>
+                    <div className="game-details">
+                      <p className="game-opponent">vs {gameData.opponentUsername}</p>
+                      <p className="game-date">
+                        {formatGameDate(gameData.game.endTime || gameData.game.startTime)}
+                      </p>
+                    </div>
+                    <button 
+                      className="view-game-btn"
+                      onClick={() => navigate(`/game/${gameData.game.gameId}`)}
+                    >
+                      {gameData.game.status === 'ongoing' ? 'Continue' : 'View'}
+                    </button>
                   </div>
-                  <div className="game-details">
-                    <p className="game-opponent">vs {gameData.opponentUsername}</p>
-                    <p className="game-date">
-                      {new Date(gameData.game.endTime).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <button 
-                    className="view-game-btn"
-                    onClick={() => navigate(`/game/${gameData.game.gameId}`)}
-                  >
-                    View
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="empty-state">

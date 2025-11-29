@@ -7,6 +7,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PlayerDAO {
 
@@ -86,6 +88,34 @@ public class PlayerDAO {
             throw new RuntimeException("Error finding player: " + e.getMessage(), e);
         }
         return null;
+    }
+
+    public List<Player> getAllPlayersWithStats() {
+        List<Player> players = new ArrayList<>();
+        String sql = "SELECT id, username, games_played, games_won " +
+                    "FROM players " +
+                    "WHERE games_played > 0 " +
+                    "ORDER BY games_won DESC, games_played DESC " +
+                    "LIMIT 100";
+        
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                Player player = new Player();
+                player.setId(rs.getInt("id"));
+                player.setUsername(rs.getString("username"));
+                player.setGamesPlayed(rs.getInt("games_played"));
+                player.setGamesWon(rs.getInt("games_won"));
+                players.add(player);
+            }
+            
+            return players;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error getting player stats: " + e.getMessage(), e);
+        }
     }
 }
 

@@ -1,6 +1,6 @@
-com\thetwelfthmove\utils\JWTUtil.class
 com\thetwelfthmove\App.class
 com\thetwelfthmove\models\ChessPiece.class
 com\thetwelfthmove\dao\DatabaseConnection.class
+com\thetwelfthmove\utils\JWTUtil.class
 com\thetwelfthmove\models\ChessBoard.class
 com\thetwelfthmove\models\ChessBoard$1.class

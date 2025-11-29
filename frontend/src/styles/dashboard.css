@@ -510,3 +510,107 @@
   cursor: not-allowed;
   transform: none !important;
 }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.section-header h2 {
+  margin: 0;
+}
+
+/* Loading state for recent games */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(109, 213, 237, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Enhanced game result badges */
+.game-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.game-result.win {
+  background: rgba(92, 240, 92, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(92, 240, 92, 0.3);
+}
+
+.game-result.loss {
+  background: rgba(255, 107, 107, 0.15);
+  color: var(--danger);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.game-result.ongoing {
+  background: rgba(109, 213, 237, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(109, 213, 237, 0.3);
+}
+
+.result-icon {
+  font-size: 16px;
+}
+
+.result-text {
+  font-size: 14px;
+}
+
+/* Responsive updates */
+@media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .game-item {
+    flex-wrap: wrap;
+  }
+  
+  .game-result {
+    width: 100%;
+    order: -1;
+  }
+  
+  .view-game-btn {
+    width: 100%;
+    margin-top: 8px;
+  }
+}
