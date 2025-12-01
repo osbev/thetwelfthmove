@@ -1,4 +1,4 @@
-// /frontend/src/components/GamePage.jsx
+// /frontend/src/components/GamePage.jsx 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -27,6 +27,16 @@ export default function GamePage() {
   const [player1Username, setPlayer1Username] = useState("");
   const [player2Username, setPlayer2Username] = useState("");
   const [isMyTurn, setIsMyTurn] = useState(false);
+  
+  // Notification states
+  const [notification, setNotification] = useState(null);
+  const [opponentDisconnected, setOpponentDisconnected] = useState(false);
+
+  // Show notification helper
+  const showNotification = (message, type = 'info', duration = 3000) => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), duration);
+  };
 
   // Initial load
   useEffect(() => {
@@ -38,7 +48,6 @@ export default function GamePage() {
     if (data.game) {
       setGame(data.game);
       
-      // Update player usernames if available
       if (data.player1Username) setPlayer1Username(data.player1Username);
       if (data.player2Username) setPlayer2Username(data.player2Username);
     }
@@ -60,26 +69,22 @@ export default function GamePage() {
     }
   }, []);
 
-  // Enable polling only when game is online multiplayer (has game code and not local)
   const isLocalGame = game && game.player1Id === game.player2Id;
   const pollingEnabled = game && !isLocalGame && (game.status === 'ongoing' || game.status === 'waiting');
   const { opponentMoved } = useGamePolling(gameId, handlePollUpdate, pollingEnabled);
 
-  // Auto-flip board based on player (for online) or turn (for local)
+  // Auto-flip board based on player
   useEffect(() => {
     if (game && user) {
       const isLocalGame = game.player1Id === game.player2Id;
       
       if (isLocalGame) {
-        // Local game: flip based on turn
         setFlipped(game.currentTurn === 'black');
-        setIsMyTurn(true); // Always your turn in local mode
+        setIsMyTurn(true);
       } else {
-        // Online game: flip based on player color
         const isPlayer2 = game.player2Id === user.id;
         setFlipped(isPlayer2);
         
-        // Check if it's my turn
         const currentTurn = game.currentTurn;
         const myTurn = (currentTurn === 'white' && game.player1Id === user.id) ||
                        (currentTurn === 'black' && game.player2Id === user.id);
@@ -96,7 +101,6 @@ export default function GamePage() {
       setPlayer1Username(response.data.player1Username);
       setPlayer2Username(response.data.player2Username);
       
-      // Load moves
       const movesResponse = await axios.get(`http://localhost:7000/games/${gameId}/moves`);
       setMoves(movesResponse.data.moves);
       updateCapturedPieces(movesResponse.data.moves);
@@ -129,11 +133,16 @@ export default function GamePage() {
     setCapturedPieces(captured);
   };
 
-  const handleMove = async (from, to) => {
+  const handleMove = async (from, to, promotionPiece = null) => {
     try {
+      const moveData = { from, to };
+      if (promotionPiece) {
+        moveData.promotion = promotionPiece;
+      }
+
       const response = await axios.post(
         `http://localhost:7000/games/${gameId}/move`,
-        { from, to },
+        moveData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -141,7 +150,6 @@ export default function GamePage() {
         }
       );
 
-      // Update state immediately
       setBoard(response.data.board);
       setIsCheck(response.data.isCheck);
       setIsCheckmate(response.data.isCheckmate);
@@ -151,23 +159,42 @@ export default function GamePage() {
         currentTurn: response.data.nextTurn,
       }));
 
-      // Reload moves
       const movesResponse = await axios.get(`http://localhost:7000/games/${gameId}/moves`);
       setMoves(movesResponse.data.moves);
       updateCapturedPieces(movesResponse.data.moves);
 
       if (response.data.isCheckmate) {
         setTimeout(() => {
-          alert(`Checkmate! ${game.currentTurn === 'white' ? 'White' : 'Black'} wins!`);
+          showNotification(`Checkmate! ${game.currentTurn === 'white' ? 'White' : 'Black'} wins!`, 'success', 5000);
         }, 500);
       } else if (response.data.isCheck) {
         setTimeout(() => {
-          alert(`Check!`);
+          showNotification(`Check!`, 'warning', 2000);
         }, 300);
       }
     } catch (err) {
       console.error("Move failed:", err);
-      alert(err.response?.data?.error || "Invalid move");
+      const errorMsg = err.response?.data?.error || "Invalid move";
+      
+      // Show detailed error explanation
+      let explanation = "";
+      if (errorMsg.includes("Invalid move")) {
+        explanation = "This move doesn't follow the piece's movement rules.";
+      } else if (errorMsg.includes("Not your turn")) {
+        explanation = "Please wait for your opponent to move.";
+      } else if (errorMsg.includes("check")) {
+        explanation = "This move would leave your king in check. You must protect your king!";
+      } else if (errorMsg.includes("en passant")) {
+        explanation = "En passant can only be done immediately after your opponent's pawn moves two squares.";
+      } else if (errorMsg.includes("castle")) {
+        explanation = "Castling requires: King and rook haven't moved, no pieces between them, and king not in/through check.";
+      }
+      
+      showNotification(
+        explanation || errorMsg,
+        'error',
+        4000
+      );
     }
   };
 
@@ -185,11 +212,11 @@ export default function GamePage() {
         }
       );
 
-      alert("You resigned. Returning to dashboard...");
-      navigate("/dashboard");
+      showNotification("You resigned. Returning to dashboard...", 'info', 2000);
+      setTimeout(() => navigate("/dashboard"), 2000);
     } catch (err) {
       console.error("Resign failed:", err);
-      alert("Failed to resign");
+      showNotification("Failed to resign", 'error');
     }
   };
 
@@ -219,7 +246,6 @@ export default function GamePage() {
     );
   }
 
-  // Show waiting screen if game is waiting for player 2
   if (game && game.status === 'waiting') {
     return (
       <div className="game-page">
@@ -230,10 +256,32 @@ export default function GamePage() {
 
   return (
     <div className="game-page">
-      {/* Opponent moved notification (only for online games) */}
+      {/* Notifications */}
+      {notification && (
+        <div className={`game-notification ${notification.type}`}>
+          <div className="notification-content">
+            <span className="notification-icon">
+              {notification.type === 'error' && '⚠️'}
+              {notification.type === 'warning' && '⚡'}
+              {notification.type === 'success' && '✅'}
+              {notification.type === 'info' && 'ℹ️'}
+            </span>
+            <span className="notification-message">{notification.message}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Opponent moved notification */}
       {opponentMoved && !isLocalGame && (
         <div className="opponent-notification">
           🎯 Opponent moved!
+        </div>
+      )}
+
+      {/* Opponent disconnected warning */}
+      {opponentDisconnected && !isLocalGame && (
+        <div className="disconnect-warning">
+          ⚠️ Your opponent seems to have disconnected. You can wait or resign.
         </div>
       )}
 
@@ -243,7 +291,6 @@ export default function GamePage() {
           <div className="status-card">
             <h2>Game Status</h2>
             
-            {/* Game Code Display (only for online games) */}
             {game.gameCode && (
               <div className="code-mini">
                 <span className="code-label">Game:</span>
@@ -251,7 +298,6 @@ export default function GamePage() {
               </div>
             )}
 
-            {/* Player info (only for online games) */}
             {!isLocalGame && (
               <div className="players-info">
                 <div className="player-badge white">
@@ -263,7 +309,6 @@ export default function GamePage() {
               </div>
             )}
 
-            {/* Local game indicator */}
             {isLocalGame && (
               <div className="local-game-badge">
                 🎮 Local 2-Player

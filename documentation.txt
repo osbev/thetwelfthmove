@@ -1,0 +1,269 @@
+# Backend Code Documentation - TheTwelfthMove Chess Application
+
+This document explains the backend Java code for the TheTwelfthMove chess application, with emphasis on Object-Oriented Programming (OOP) concepts: Encapsulation, Inheritance, Polymorphism, and Abstraction.
+
+## Overview
+
+The backend is built using Java with Javalin framework for REST API, and uses Maven for dependency management. The application implements a multiplayer chess game with features like game creation, joining, move validation, and game state management.
+
+## OOP Concepts in the Backend
+
+### 1. Encapsulation
+
+Encapsulation is the practice of hiding internal implementation details and exposing only necessary interfaces through public methods. This protects the integrity of data and allows controlled access.
+
+#### ChessPiece Class
+```java
+public class ChessPiece {
+    private String type;  // "pawn", "knight", "bishop", "rook", "queen", "king"
+    private String color; // "white" or "black"
+
+    public ChessPiece(String type, String color) {
+        this.type = type;
+        this.color = color;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    // ... getters and setters
+}
+```
+
+**Encapsulation in ChessPiece:**
+- Private fields `type` and `color` are hidden from external access
+- Public getter/setter methods provide controlled access to the data
+- The `transient` keyword in Player class (not shown here) demonstrates encapsulation by hiding sensitive data like passwords from JSON serialization
+
+#### ChessBoard Class
+```java
+public class ChessBoard {
+    private ChessPiece[][] board; // 8x8 board
+    private boolean whiteKingMoved = false;
+    private boolean blackKingMoved = false;
+    // ... other private fields
+
+    public ChessPiece getPiece(int row, int col) {
+        if (row < 0 || row >= 8 || col < 0 || col >= 8) return null;
+        return board[row][col];
+    }
+
+    public void setPiece(int row, int col, ChessPiece piece) {
+        if (row >= 0 && row < 8 && col >= 0 && col < 8) {
+            board[row][col] = piece;
+        }
+    }
+    // ... complex internal logic hidden behind simple public methods
+}
+```
+
+**Encapsulation in ChessBoard:**
+- The complex 8x8 board array and castling state variables are private
+- Public methods like `getPiece()`, `setPiece()`, and `isValidMove()` provide a clean interface
+- Internal validation logic (checking bounds, move legality) is encapsulated
+
+#### Player and Game Model Classes
+```java
+public class Player {
+    private int id;
+    private String username;
+    private transient String password; // hide in JSON
+    private int gamesPlayed;
+    private int gamesWon;
+    // ... getters and setters
+}
+
+public class Game {
+    private int gameId;
+    private int player1Id;
+    private Integer player2Id;
+    private String gameCode;
+    // ... many private fields with getters/setters
+}
+```
+
+**Encapsulation in Models:**
+- All data fields are private
+- Public getters/setters control access
+- Sensitive data like passwords are marked `transient` to prevent serialization
+
+### 2. Inheritance
+
+Inheritance allows creating new classes based on existing ones, inheriting their properties and methods. While not extensively used in this codebase, the structure supports inheritance patterns.
+
+**Potential Inheritance Structure:**
+- All model classes could inherit from a base `Entity` class
+- Controllers could inherit from a base `BaseController` class
+- DAO classes could inherit from a generic `BaseDAO<T>` class
+
+The current code doesn't show explicit inheritance, but the architecture is designed to support it.
+
+### 3. Polymorphism
+
+Polymorphism allows objects of different classes to be treated as objects of a common superclass. In this codebase, polymorphism is demonstrated through method overriding and runtime type checking.
+
+#### Polymorphism in ChessBoard Move Validation
+```java
+// Validate move based on piece type
+boolean validMove = false;
+switch (piece.getType()) {
+    case "pawn":
+        validMove = isValidPawnMove(fromPos, toPos, piece.getColor(), targetPiece);
+        break;
+    case "knight":
+        validMove = isValidKnightMove(fromPos, toPos);
+        break;
+    case "bishop":
+        validMove = isValidBishopMove(fromPos, toPos);
+        break;
+    case "rook":
+        validMove = isValidRookMove(fromPos, toPos);
+        break;
+    case "queen":
+        validMove = isValidQueenMove(fromPos, toPos);
+        break;
+    case "king":
+        validMove = isValidKingMove(fromPos, toPos, piece.getColor());
+        break;
+}
+```
+
+**Polymorphism Explanation:**
+- Different piece types exhibit different behaviors (polymorphic behavior)
+- The `isValidMove()` method calls different validation methods based on piece type
+- Each piece type has its own movement rules, demonstrating behavioral polymorphism
+- The queen's move validation combines rook and bishop moves, showing composition-based polymorphism
+
+#### Polymorphism in GameController
+```java
+public static void registerRoutes(Javalin app) {
+    app.post("/games/create", createGameHandler);
+    app.post("/games/create-local", createLocalGameHandler);
+    app.post("/games/join", joinGameHandler);
+    // ... many different handlers
+}
+```
+
+**Polymorphism in Controllers:**
+- Different HTTP handlers (functions) handle different request types
+- All handlers implement the same `Handler` interface (functional interface polymorphism)
+- Runtime polymorphism through method references
+
+### 4. Abstraction
+
+Abstraction involves hiding complex implementation details and showing only essential features. This is achieved through abstract classes, interfaces, and high-level APIs.
+
+#### Abstraction in ChessBoard Class
+```java
+public boolean isValidMove(String from, String to, String playerColor) {
+    // Complex validation logic hidden behind simple method signature
+    // Handles piece movement rules, castling, en passant, etc.
+}
+
+public boolean isKingInCheck(String playerColor) {
+    // Complex algorithm to check if king is under attack
+    // Details of piece attack patterns are abstracted away
+}
+
+public boolean isCheckmate(String playerColor) {
+    // High-level method that abstracts away the complexity of
+    // checking if any legal moves exist
+}
+```
+
+**Abstraction Benefits:**
+- Users of ChessBoard don't need to know how chess rules work internally
+- Complex algorithms (like check detection) are abstracted into simple method calls
+- Board state management is abstracted from game logic
+
+#### Abstraction in GameController
+```java
+// Simple API endpoint hides complex business logic
+app.post("/games/{gameId}/move", makeMoveHandler);
+
+// The handler abstracts away:
+// - Authentication and authorization
+// - Move validation
+// - Board state updates
+// - Check/checkmate detection
+// - Database persistence
+// - Response formatting
+```
+
+**Controller Abstraction:**
+- REST API provides a simple interface
+- Complex game logic is abstracted behind HTTP endpoints
+- Client applications don't need to know internal implementation details
+
+#### Abstraction in DAO Layer
+```java
+public class GameDAO {
+    public Game createGame(int player1Id, Integer player2Id) {
+        // Abstracts away SQL queries and database operations
+    }
+
+    public boolean joinGame(String gameCode, int player2Id) {
+        // Complex database logic hidden behind simple method
+    }
+}
+```
+
+**DAO Abstraction:**
+- Database operations are abstracted from business logic
+- SQL complexity is hidden from the rest of the application
+- Different database implementations could be swapped without affecting other code
+
+## Key Classes and Their OOP Roles
+
+### Models (Encapsulation Focus)
+- **ChessPiece**: Encapsulates piece properties and behavior
+- **ChessBoard**: Encapsulates board state and chess rules
+- **Player**: Encapsulates player data
+- **Game**: Encapsulates game state and metadata
+- **Move**: Encapsulates move information
+
+### Controllers (Abstraction Focus)
+- **GameController**: Provides abstracted API for game operations
+- **PlayerController**: Abstracts player management operations
+- **AuthController**: Abstracts authentication logic
+
+### DAO Layer (Abstraction Focus)
+- **GameDAO**: Abstracts database operations for games
+- **PlayerDAO**: Abstracts database operations for players
+- **DatabaseConnection**: Abstracts database connection management
+
+### Utilities (Polymorphism and Abstraction)
+- **JWTUtil**: Abstracts JWT token operations
+- **GameCodeGenerator**: Abstracts game code generation logic
+
+## Design Patterns Used
+
+### MVC Pattern (Model-View-Controller)
+- **Models**: ChessPiece, ChessBoard, Player, Game, Move
+- **Views**: Frontend React components (not shown)
+- **Controllers**: GameController, PlayerController, AuthController
+
+### DAO Pattern (Data Access Object)
+- Abstracts database operations
+- Provides clean separation between business logic and data persistence
+
+### Singleton Pattern (Implicit)
+- DAO instances are created as static fields
+- Ensures single instance of database access objects
+
+## Benefits of OOP in This Application
+
+1. **Maintainability**: Encapsulated code is easier to modify without affecting other parts
+2. **Reusability**: Classes can be reused across different parts of the application
+3. **Scalability**: Abstracted interfaces allow for easy extension
+4. **Security**: Encapsulation protects sensitive data and operations
+5. **Testability**: Polymorphic interfaces make unit testing easier
+
+## Conclusion
+
+The backend code demonstrates solid OOP principles, particularly excelling in encapsulation and abstraction. While inheritance is not heavily used, the architecture supports it for future extensions. Polymorphism is effectively used in move validation and request handling. This design makes the codebase maintainable, scalable, and easy to understand.

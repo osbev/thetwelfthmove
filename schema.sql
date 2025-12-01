@@ -1,6 +1,4 @@
 -- Database: thetwelfthmove
-CREATE DATABASE IF NOT EXISTS thetwelfthmove;
-USE thetwelfthmove;
 
 -- Table: players
 CREATE TABLE IF NOT EXISTS players (

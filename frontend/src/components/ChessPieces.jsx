@@ -1,5 +1,4 @@
 // /frontend/src/components/ChessPieces.jsx
-// Gothic pixel-art style chess pieces
 
 export const ChessPieces = {
   white_pawn: () => (

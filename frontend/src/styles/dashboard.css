@@ -614,3 +614,22 @@
     margin-top: 8px;
   }
 }
+
+.view-all-btn {
+  padding: 8px 20px;
+  background: rgba(109, 213, 237, 0.1);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.view-all-btn:hover {
+  background: rgba(109, 213, 237, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(109, 213, 237, 0.3);
+}

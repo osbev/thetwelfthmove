@@ -9,16 +9,18 @@ export default function ChessBoard({
   onMove, 
   lastMove,
   isCheck,
-  flipped = false 
+  flipped = false,
+  onPromotionNeeded
 }) {
   const [selectedSquare, setSelectedSquare] = useState(null);
   const [validMoves, setValidMoves] = useState([]);
   const [draggedPiece, setDraggedPiece] = useState(null);
-  const [dragPosition, setDragPosition] = useState(null);
+  const [showPromotionModal, setShowPromotionModal] = useState(false);
+  const [pendingPromotion, setPendingPromotion] = useState(null);
 
   // Convert row/col to notation (e.g., [0,0] -> "a8")
   const toNotation = (row, col) => {
-    const file = String.fromCharCode(97 + col); // 'a' + col
+    const file = String.fromCharCode(97 + col);
     const rank = 8 - row;
     return `${file}${rank}`;
   };
@@ -28,6 +30,19 @@ export default function ChessBoard({
     const col = notation.charCodeAt(0) - 97;
     const row = 8 - parseInt(notation[1]);
     return [row, col];
+  };
+
+  // Check if pawn move would trigger promotion
+  const wouldPromote = (from, to) => {
+    const [fromRow, fromCol] = fromNotation(from);
+    const [toRow, toCol] = fromNotation(to);
+    const piece = board[fromRow][fromCol];
+    
+    if (!piece || piece.type !== 'pawn') return false;
+    
+    // White pawn reaching row 0, Black pawn reaching row 7
+    return (piece.color === 'white' && toRow === 0) || 
+           (piece.color === 'black' && toRow === 7);
   };
 
   // Get valid moves for a piece based on chess rules
@@ -91,11 +106,9 @@ export default function ChessBoard({
           moves.push(toNotation(newRow, newCol));
         }
         // En passant - show diagonal move even if square is empty
-        // Backend will validate if en passant is legal
         else if (!target) {
           const adjacentPiece = board[row][newCol];
           if (adjacentPiece && adjacentPiece.type === 'pawn' && adjacentPiece.color !== color) {
-            // Might be en passant, show as valid move
             moves.push(toNotation(newRow, newCol));
           }
         }
@@ -210,9 +223,7 @@ export default function ChessBoard({
       }
     });
 
-    // Castling (kingside and queenside)
-    // Note: Backend will validate if castling is actually legal
-    // We just show it as a possible move if king hasn't moved
+    // Castling
     const isStartingPosition = (color === 'white' && row === 7 && col === 4) ||
                                (color === 'black' && row === 0 && col === 4);
     
@@ -236,12 +247,11 @@ export default function ChessBoard({
     return moves;
   };
 
-  // Handle square click
+  // Handle square click with promotion check
   const handleSquareClick = (row, col) => {
     const notation = toNotation(row, col);
     const piece = board[row][col];
 
-    // If no piece selected, select this piece if it's the current player's
     if (!selectedSquare) {
       if (piece && piece.color === currentTurn) {
         setSelectedSquare(notation);
@@ -250,24 +260,39 @@ export default function ChessBoard({
       return;
     }
 
-    // If clicking the same square, deselect
     if (selectedSquare === notation) {
       setSelectedSquare(null);
       setValidMoves([]);
       return;
     }
 
-    // If clicking own piece, select that instead
     if (piece && piece.color === currentTurn) {
       setSelectedSquare(notation);
       setValidMoves(getValidMovesForPiece(row, col));
       return;
     }
 
-    // Try to make a move
-    onMove(selectedSquare, notation);
-    setSelectedSquare(null);
-    setValidMoves([]);
+    // Check if pawn promotion
+    if (wouldPromote(selectedSquare, notation)) {
+      setPendingPromotion({ from: selectedSquare, to: notation });
+      setShowPromotionModal(true);
+      setSelectedSquare(null);
+      setValidMoves([]);
+    } else {
+      // Normal move
+      onMove(selectedSquare, notation);
+      setSelectedSquare(null);
+      setValidMoves([]);
+    }
+  };
+
+  // Handle promotion choice
+  const handlePromotionChoice = (pieceType) => {
+    if (pendingPromotion) {
+      onMove(pendingPromotion.from, pendingPromotion.to, pieceType);
+      setShowPromotionModal(false);
+      setPendingPromotion(null);
+    }
   };
 
   // Drag and drop handlers
@@ -282,7 +307,6 @@ export default function ChessBoard({
     setDraggedPiece(notation);
     setValidMoves(getValidMovesForPiece(row, col));
 
-    // Create custom drag image
     const dragImg = e.target.cloneNode(true);
     dragImg.style.opacity = '0.5';
     document.body.appendChild(dragImg);
@@ -299,10 +323,18 @@ export default function ChessBoard({
     if (!draggedPiece) return;
 
     const targetNotation = toNotation(row, col);
-    onMove(draggedPiece, targetNotation);
     
-    setDraggedPiece(null);
-    setValidMoves([]);
+    // Check if pawn promotion
+    if (wouldPromote(draggedPiece, targetNotation)) {
+      setPendingPromotion({ from: draggedPiece, to: targetNotation });
+      setShowPromotionModal(true);
+      setDraggedPiece(null);
+      setValidMoves([]);
+    } else {
+      onMove(draggedPiece, targetNotation);
+      setDraggedPiece(null);
+      setValidMoves([]);
+    }
   };
 
   const handleDragEnd = () => {
@@ -344,7 +376,6 @@ export default function ChessBoard({
         onDragOver={handleDragOver}
         onDrop={(e) => handleDrop(e, displayRow, displayCol)}
       >
-        {/* Coordinate labels */}
         {col === 0 && (
           <span className="rank-label">{flipped ? row + 1 : 8 - row}</span>
         )}
@@ -352,7 +383,6 @@ export default function ChessBoard({
           <span className="file-label">{String.fromCharCode(97 + (flipped ? 7 - col : col))}</span>
         )}
 
-        {/* Piece */}
         {piece && (
           <div
             className={`piece ${piece.color} ${draggedPiece === notation ? 'dragging' : ''}`}
@@ -364,7 +394,6 @@ export default function ChessBoard({
           </div>
         )}
 
-        {/* Valid move indicator */}
         {validMoves.includes(notation) && (
           <div className={`move-indicator ${piece ? 'capture' : 'empty'}`} />
         )}
@@ -373,14 +402,43 @@ export default function ChessBoard({
   };
 
   return (
-    <div className="chessboard-wrapper">
-      <div className="chessboard">
-        {Array.from({ length: 8 }).map((_, row) => (
-          <div key={row} className="board-row">
-            {Array.from({ length: 8 }).map((_, col) => renderSquare(row, col))}
-          </div>
-        ))}
+    <>
+      <div className="chessboard-wrapper">
+        <div className="chessboard">
+          {Array.from({ length: 8 }).map((_, row) => (
+            <div key={row} className="board-row">
+              {Array.from({ length: 8 }).map((_, col) => renderSquare(row, col))}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+
+      {/* Pawn Promotion Modal */}
+      {showPromotionModal && (
+        <div className="promotion-overlay">
+          <div className="promotion-modal">
+            <h3>Choose Promotion Piece</h3>
+            <div className="promotion-choices">
+              <button className="promotion-btn" onClick={() => handlePromotionChoice('queen')}>
+                <span className="promotion-piece">♕</span>
+                <span>Queen</span>
+              </button>
+              <button className="promotion-btn" onClick={() => handlePromotionChoice('rook')}>
+                <span className="promotion-piece">♖</span>
+                <span>Rook</span>
+              </button>
+              <button className="promotion-btn" onClick={() => handlePromotionChoice('bishop')}>
+                <span className="promotion-piece">♗</span>
+                <span>Bishop</span>
+              </button>
+              <button className="promotion-btn" onClick={() => handlePromotionChoice('knight')}>
+                <span className="promotion-piece">♘</span>
+                <span>Knight</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

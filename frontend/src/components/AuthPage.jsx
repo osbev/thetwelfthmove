@@ -29,6 +29,14 @@ export default function AuthPage({ isSignup = false }) {
 
   return (
     <div className="auth-wrapper">
+      {/* Back to Landing Button */}
+      <button className="back-to-landing-btn" onClick={() => navigate("/")}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back to Home
+      </button>
+
       <div className="chess-pieces-bg">
         <div className="piece piece-1">♔</div>
         <div className="piece piece-2">♛</div>

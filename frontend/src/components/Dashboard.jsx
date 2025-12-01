@@ -1,4 +1,4 @@
-// Replace your existing /frontend/src/components/Dashboard.jsx with this:
+// /frontend/src/components/Dashboard.jsx
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -25,7 +25,7 @@ export default function Dashboard() {
     try {
       setLoadingGames(true);
       const response = await axios.get(
-        `http://localhost:7000/games/player/${user.id}/recent?limit=5`
+        `http://localhost:7000/games/player/${user.id}/recent?limit=3`
       );
       setRecentGames(response.data.games);
     } catch (error) {
@@ -197,6 +197,7 @@ export default function Dashboard() {
           </div>
         </div>
 
+
         <div className="action-grid">
           <div className="action-card">
             <div className="action-icon">🎮</div>
@@ -226,6 +227,15 @@ export default function Dashboard() {
           </div>
 
           <div className="action-card">
+            <div className="action-icon">📜</div>
+            <h3>Game History</h3>
+            <p>View all your past matches</p>
+            <button className="action-btn secondary" onClick={() => navigate('/history')}>
+              View History
+            </button>
+          </div>
+
+          <div className="action-card">
             <div className="action-icon">🏆</div>
             <h3>Leaderboard</h3>
             <p>View top players and rankings</p>
@@ -247,6 +257,14 @@ export default function Dashboard() {
         <div className="recent-games">
           <div className="section-header">
             <h2>Recent Games</h2>
+            {recentGames.length > 0 && (
+              <button 
+                className="view-all-btn" 
+                onClick={() => navigate('/history')}
+              >
+                View All
+              </button>
+            )}
           </div>
 
           {loadingGames ? (

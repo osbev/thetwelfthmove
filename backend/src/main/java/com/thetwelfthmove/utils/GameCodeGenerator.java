@@ -35,7 +35,7 @@ public class GameCodeGenerator {
         if (code == null) return false;
         
         // Should match pattern: u-word-word-number
-        String pattern = "^u-[a-z]+-[a-z]+-\\d{1,2}$";
+        String pattern = "^[a-z]+-[a-z]+-\\d{1,2}$";
         return code.matches(pattern);
     }
 }
